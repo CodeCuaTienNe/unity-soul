@@ -77,6 +77,18 @@ public class MovementController : MonoBehaviour
 
         Vector3 movement = (forward * vertical + right * horizontal).normalized;
         moveDirection = new Vector3(movement.x * moveSpeed, moveDirection.y, movement.z * moveSpeed);
+
+        // Rotate character towards movement direction
+        RotateCharacter(movement);
+    }
+
+    private void RotateCharacter(Vector3 movement)
+    {
+        if (movement != Vector3.zero)
+        {
+            Quaternion toRotation = Quaternion.LookRotation(movement, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, moveSpeed * Time.deltaTime);
+        }
     }
 
     private void HandleJump()
