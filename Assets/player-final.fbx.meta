@@ -36,7 +36,7 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: Armature|Armature|mixamo.com|Layer0
+      name: Walk
       takeName: Armature|Armature|mixamo.com|Layer0
       internalID: -4791504522942941401
       firstFrame: 0
