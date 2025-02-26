@@ -397,7 +397,6 @@ GameObject:
   - component: {fileID: 1010771453}
   - component: {fileID: 1010771458}
   - component: {fileID: 1010771457}
-  - component: {fileID: 1010771459}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -536,6 +535,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 5
+  sprintMultiplier: 1.5
   jumpHeight: 2
   gravity: -9.81
   fallMultiplier: 2.5
@@ -545,27 +545,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   jumpCooldown: 0.1
---- !u!114 &1010771459
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1010771452}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c1792a13dcddf4965b6d871d073267e8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  minVerticalAngle: -30
-  maxVerticalAngle: 60
-  rotationSpeed: 2
-  cameraOffset: {x: 0, y: 1.5, z: -5}
-  smoothTime: 0.1
-  defaultCameraDistance: 5
-  minCameraDistance: 2
-  maxCameraDistance: 8
-  zoomSpeed: 2
+  dashDistance: 5
+  dashDuration: 0.2
+  dashCooldown: 1
 --- !u!1 &1032318880
 GameObject:
   m_ObjectHideFlags: 0
