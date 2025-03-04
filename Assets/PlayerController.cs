@@ -48,11 +48,25 @@ public class PlayerController : MonoBehaviour
     private bool isJumpAnimationPlaying = false;
     private float jumpCooldownTimer = 0f;
     private float jumpAnimationTimer = 0f;
+
     // Add these variables to your class (after existing animation-related variables)
     [Header("Animation Settings")]
     [SerializeField] private float jumpAnimationDelay = 0f;  // Keep at 0 to start immediately
     [SerializeField] private bool useJumpTrigger = true;     // Use trigger instead of bool for more precise control
     private bool jumpAnimationStarted = false;
+
+    // Dash settings
+    [Header("Dash Settings")]
+    [SerializeField] private float dashSpeed = 15.0f;
+    [SerializeField] private float dashDuration = 0.3f;
+    [SerializeField] private float dashCooldown = 1.0f;
+    [SerializeField] private bool useDashTrail = true;
+    private bool isDashing = false;
+    private bool canDash = true;
+    private float dashCooldownTimer = 0f;
+    private float dashTimer = 0f;
+    private Vector3 dashDirection;
+    private TrailRenderer dashTrail;
 
     // Component references
     private Vector3 velocity;
@@ -76,6 +90,23 @@ public class PlayerController : MonoBehaviour
     {
         InitializeComponents();
         currentMoveSpeed = walkSpeed; // Default to walking speed
+        
+        // Get or create trail renderer for dash effect
+        if (useDashTrail)
+        {
+            dashTrail = GetComponent<TrailRenderer>();
+            if (dashTrail == null)
+            {
+                dashTrail = gameObject.AddComponent<TrailRenderer>();
+                dashTrail.startWidth = 0.5f;
+                dashTrail.endWidth = 0.0f;
+                dashTrail.time = dashDuration;
+                dashTrail.material = new Material(Shader.Find("Sprites/Default"));
+                dashTrail.startColor = new Color(1f, 1f, 1f, 0.5f);
+                dashTrail.endColor = new Color(1f, 1f, 1f, 0f);
+                dashTrail.enabled = false;
+            }
+        }
     }
 
     private void InitializeComponents()
@@ -151,6 +182,48 @@ public class PlayerController : MonoBehaviour
             if (showDebugLogs)
             {
                 Debug.Log("Running stopped");
+            }
+        }
+    }
+    
+    // New method to handle Dash input
+    public void onDash(InputAction.CallbackContext context)
+    {
+        if (context.performed && canDash && !isDashing && isGrounded)
+        {
+            StartDash();
+        }
+    }
+    
+    // Method to start dash
+    private void StartDash()
+    {
+        // Only dash if we have some movement input
+        if (moveInput.magnitude > 0.1f)
+        {
+            isDashing = true;
+            canDash = false;
+            dashTimer = dashDuration;
+            dashCooldownTimer = dashCooldown;
+            
+            // Use the current move direction
+            dashDirection = GetMovementDirection().normalized;
+            
+            if (showDebugLogs)
+            {
+                Debug.Log("Dash started");
+            }
+            
+            // Enable trail effect if available
+            if (dashTrail != null && useDashTrail)
+            {
+                dashTrail.enabled = true;
+            }
+            
+            // Optional: Trigger dash animation
+            if (animator != null)
+            {
+                animator.SetTrigger("Dash");
             }
         }
     }
@@ -236,6 +309,12 @@ public class PlayerController : MonoBehaviour
         {
             StartJumpSequence();
         }
+        
+        // Check for dash using legacy input
+        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash && !isDashing && isGrounded)
+        {
+            StartDash();
+        }
     }
 
     // Update method changes for better jump animation tracking
@@ -251,6 +330,30 @@ public class PlayerController : MonoBehaviour
         if (jumpCooldownTimer > 0)
         {
             jumpCooldownTimer -= Time.deltaTime;
+        }
+        
+        // Update dash timers
+        if (isDashing)
+        {
+            dashTimer -= Time.deltaTime;
+            if (dashTimer <= 0)
+            {
+                isDashing = false;
+                if (dashTrail != null && useDashTrail)
+                {
+                    dashTrail.enabled = false;
+                }
+            }
+        }
+        
+        // Update dash cooldown
+        if (!canDash)
+        {
+            dashCooldownTimer -= Time.deltaTime;
+            if (dashCooldownTimer <= 0)
+            {
+                canDash = true;
+            }
         }
         
         // Update jump animation timer
@@ -347,6 +450,9 @@ public class PlayerController : MonoBehaviour
         
         // Set the running state
         animator.SetBool("isRunning", isRunning);
+        
+        // Set dash state if we're dashing
+        animator.SetBool("isDashing", isDashing);
         
         // Add jump progress for animation blending (0 to 1 value through jump animation)
         float jumpProgress = isJumping ? Mathf.Clamp01(jumpAnimationTimer / jumpAnimationDuration) : 0f;
@@ -550,14 +656,24 @@ public class PlayerController : MonoBehaviour
     
     private void ApplyMovement()
     {
-        // Combine horizontal movement with vertical velocity
-        Vector3 moveVector = new Vector3(moveDirection.x, playerVelocity.y, moveDirection.z);
+        Vector3 moveVector;
+        
+        if (isDashing)
+        {
+            // Override movement with dash
+            moveVector = new Vector3(dashDirection.x * dashSpeed, playerVelocity.y, dashDirection.z * dashSpeed);
+        }
+        else
+        {
+            // Regular movement - combine horizontal movement with vertical velocity
+            moveVector = new Vector3(moveDirection.x, playerVelocity.y, moveDirection.z);
+        }
         
         // Try moving
         CollisionFlags flags = characterController.Move(moveVector * Time.deltaTime);
         
         // If we hit something, try alternative directions
-        if ((flags & CollisionFlags.Sides) != 0 && moveDirection.magnitude > 0.1f)
+        if ((flags & CollisionFlags.Sides) != 0 && moveDirection.magnitude > 0.1f && !isDashing)
         {
             AttemptSideMovement();
         }
@@ -653,6 +769,13 @@ public class PlayerController : MonoBehaviour
         {
             Gizmos.color = isObstacleInFront ? Color.red : Color.blue;
             Gizmos.DrawRay(transform.position + Vector3.up, moveDirection.normalized);
+        }
+        
+        // Show dash direction if dashing
+        if (isDashing)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawRay(transform.position + Vector3.up, dashDirection * dashSpeed * 0.5f);
         }
         
         // Show obstacle detection rays
