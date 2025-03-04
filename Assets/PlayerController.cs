@@ -1,12 +1,14 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
     // Movement settings
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 5.0f;
+    [SerializeField] private float walkSpeed = 2.0f;  // New walk speed
+    [SerializeField] private float runSpeed = 7.0f;   // Renamed from moveSpeed
     [SerializeField] private float rotationSpeed = 15.0f;
     [SerializeField] private float slopeLimit = 45f;
     [SerializeField] private float stepOffset = 0.4f;
@@ -34,6 +36,24 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool showGizmos = true;
     [SerializeField] private bool identifyBlockingObjects = true;
 
+    // Add these new variables to your class (after the existing movement settings)
+    [Header("Jump Settings")]
+    [SerializeField] private float jumpHeight = 1.5f;
+    [SerializeField] private float jumpCooldown = 0.5f;
+    [SerializeField] private float jumpForce = 10f; // Direct force for more precise control
+    [SerializeField] private float jumpAnimationDuration = 0.8f; // How long the jump animation should play
+    [SerializeField] private float preJumpDelay = 0.1f; // Small delay before applying physics
+    [SerializeField] private float landingDelay = 0.2f; // How long to play landing animation
+    private bool isJumping = false;
+    private bool isJumpAnimationPlaying = false;
+    private float jumpCooldownTimer = 0f;
+    private float jumpAnimationTimer = 0f;
+    // Add these variables to your class (after existing animation-related variables)
+    [Header("Animation Settings")]
+    [SerializeField] private float jumpAnimationDelay = 0f;  // Keep at 0 to start immediately
+    [SerializeField] private bool useJumpTrigger = true;     // Use trigger instead of bool for more precise control
+    private bool jumpAnimationStarted = false;
+
     // Component references
     private Vector3 velocity;
     private Animator animator;
@@ -45,6 +65,8 @@ public class PlayerController : MonoBehaviour
     private bool isGrounded;
     private bool hasInitialized = false;
     private bool isObstacleInFront = false;
+    private bool isRunning = false;  // New parameter to track running state
+    private float currentMoveSpeed;  // New parameter to store current speed
     
     // Keep track of colliding objects for debugging
     private HashSet<Collider> collidingObjects = new HashSet<Collider>();
@@ -53,6 +75,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         InitializeComponents();
+        currentMoveSpeed = walkSpeed; // Default to walking speed
     }
 
     private void InitializeComponents()
@@ -106,7 +129,85 @@ public class PlayerController : MonoBehaviour
         }
     }
     
-    // Fallback method for direct input if new Input System is not responding
+    // New method to handle Run input
+    public void onRun(InputAction.CallbackContext context)
+    {
+        // Set running state based on button press/release
+        if (context.started || context.performed)
+        {
+            isRunning = true;
+            currentMoveSpeed = runSpeed;
+            
+            if (showDebugLogs)
+            {
+                Debug.Log("Running started");
+            }
+        }
+        else if (context.canceled)
+        {
+            isRunning = false;
+            currentMoveSpeed = walkSpeed;
+            
+            if (showDebugLogs)
+            {
+                Debug.Log("Running stopped");
+            }
+        }
+    }
+    
+    // Replace onJump method with this improved version
+    public void onJump(InputAction.CallbackContext context)
+    {
+        // Only jump on button press (not release), when grounded and not in cooldown
+        if (context.performed && isGrounded && jumpCooldownTimer <= 0 && !isJumping)
+        {
+            StartJumpSequence();
+        }
+    }
+
+    // New method to handle the jump sequence
+    private void StartJumpSequence()
+    {
+        // Set jump state immediately
+        isJumping = true;
+        isJumpAnimationPlaying = true;
+        jumpAnimationTimer = 0f;
+        jumpCooldownTimer = jumpCooldown;
+        
+        // Start the jump animation immediately
+        if (animator != null)
+        {
+            // Reset any animation state that might interfere
+            animator.SetBool("isJumping", true);
+            animator.speed = 1.0f;
+            
+            if (showDebugLogs)
+            {
+                Debug.Log("Jump animation started");
+            }
+        }
+        
+        // Apply physics after a tiny delay
+        StartCoroutine(ApplyJumpPhysicsAfterDelay());
+    }
+
+    // Coroutine to apply jump physics with precise timing
+    private IEnumerator ApplyJumpPhysicsAfterDelay()
+    {
+        // Wait for the pre-animation (anticipation phase)
+        yield return new WaitForSeconds(preJumpDelay);
+        
+        // Calculate and apply jump force directly
+        float jumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravityValue) * jumpHeight);
+        playerVelocity.y = jumpVelocity;
+        
+        if (showDebugLogs)
+        {
+            Debug.Log($"Jump physics applied with velocity: {jumpVelocity}");
+        }
+    }
+
+    // Similarly, update the legacy input method
     private void CheckLegacyInput()
     {
         float h = Input.GetAxis("Horizontal");
@@ -121,8 +222,23 @@ public class PlayerController : MonoBehaviour
                 Debug.Log($"Using legacy input: {moveInput}");
             }
         }
+        
+        // Check for run using legacy input system as backup
+        bool runPressed = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+        if (runPressed != isRunning)
+        {
+            isRunning = runPressed;
+            currentMoveSpeed = isRunning ? runSpeed : walkSpeed;
+        }
+        
+        // Check for jump using legacy input
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && jumpCooldownTimer <= 0 && !isJumping)
+        {
+            StartJumpSequence();
+        }
     }
 
+    // Update method changes for better jump animation tracking
     void Update()
     {
         if (!hasInitialized)
@@ -131,11 +247,37 @@ public class PlayerController : MonoBehaviour
             return;
         }
         
+        // Update jump cooldown timer
+        if (jumpCooldownTimer > 0)
+        {
+            jumpCooldownTimer -= Time.deltaTime;
+        }
+        
+        // Update jump animation timer
+        if (isJumpAnimationPlaying)
+        {
+            jumpAnimationTimer += Time.deltaTime;
+            
+            // Check if jump animation should end based on timer or landing
+            if ((jumpAnimationTimer >= jumpAnimationDuration && isGrounded) || 
+                (isGrounded && jumpAnimationTimer > jumpAnimationDuration * 0.6f && playerVelocity.y < 0.1f))
+            {
+                StartCoroutine(EndJumpAnimation());
+                isJumpAnimationPlaying = false;
+            }
+        }
+        
         // Try fallback input in case new Input System is not working
         CheckLegacyInput();
         
         // Check if we are grounded
         CheckGrounded();
+        
+        // Handle jump state completion when landing
+        if (isGrounded && isJumping && playerVelocity.y < 0.1f && jumpAnimationTimer > jumpAnimationDuration * 0.6f)
+        {
+            isJumping = false;
+        }
         
         // Check for obstacles
         CheckForObstacles();
@@ -157,6 +299,61 @@ public class PlayerController : MonoBehaviour
         {
             AttemptUnstuck();
         }
+    }
+
+    // Modified EndJumpAnimation to handle the landing phase better
+    private IEnumerator EndJumpAnimation()
+    {
+        // Wait for landing animation to complete
+        yield return new WaitForSeconds(landingDelay);
+        
+        // Reset jump state
+        isJumping = false;
+        
+        // Reset animation state
+        if (animator != null)
+        {
+            animator.SetBool("isJumping", false);
+        }
+        
+        if (showDebugLogs)
+        {
+            Debug.Log("Jump animation ended");
+        }
+    }
+
+    // Update the animator method for better synchronization
+    private void UpdateAnimator()
+    {
+        if (animator == null) return;
+        
+        // --- Movement Animation ---
+        float normalizedSpeed = 0;
+        
+        // Only update movement speed when not jumping or in the landing phase
+        if (velocity.magnitude > 0.1f && (!isJumping || (isGrounded && playerVelocity.y < 0.1f)))
+        {
+            normalizedSpeed = isRunning ? 1.0f : 0.5f;
+        }
+        
+        // Smooth the speed parameter change
+        float currentSpeed = animator.GetFloat("speed");
+        float speedSmoothRate = isJumping ? 15f : 10f; // Faster transitions during jumps
+        animator.SetFloat("speed", Mathf.Lerp(currentSpeed, normalizedSpeed, Time.deltaTime * speedSmoothRate));
+        
+        // Update jump parameters
+        animator.SetBool("isJumping", isJumping);
+        animator.SetBool("isGrounded", isGrounded);
+        
+        // Set the running state
+        animator.SetBool("isRunning", isRunning);
+        
+        // Add jump progress for animation blending (0 to 1 value through jump animation)
+        float jumpProgress = isJumping ? Mathf.Clamp01(jumpAnimationTimer / jumpAnimationDuration) : 0f;
+        animator.SetFloat("jumpProgress", jumpProgress);
+        
+        // Track vertical velocity for blend trees
+        animator.SetFloat("verticalVelocity", playerVelocity.y);
     }
     
     private void DetectNearbyObstacles()
@@ -256,6 +453,7 @@ public class PlayerController : MonoBehaviour
                     continue;
                 
                 // Add to colliding objects set
+                
                 collidingObjects.Add(hit.collider);
                 
                 // Check if this is a walkable slope
@@ -339,11 +537,11 @@ public class PlayerController : MonoBehaviour
         // Get movement direction from camera
         Vector3 desiredMoveDirection = GetMovementDirection();
         
-        // Keep track of velocity for animation
+        // Keep track of velocity for animation - Normalize for direction but keep magnitude for speed blend
         velocity = desiredMoveDirection * moveInput.magnitude;
         
-        // Apply movement speed
-        moveDirection = desiredMoveDirection * moveSpeed;
+        // Apply current movement speed (walk or run)
+        moveDirection = desiredMoveDirection * currentMoveSpeed;
         
         // Rotate towards movement direction
         Quaternion targetRotation = Quaternion.LookRotation(desiredMoveDirection);
@@ -389,8 +587,8 @@ public class PlayerController : MonoBehaviour
             
             if (clear)
             {
-                // Attempt to slide in this direction
-                characterController.Move(slideDir * moveSpeed * 0.3f * Time.deltaTime);
+                // Use currentMoveSpeed instead of the removed moveSpeed variable
+                characterController.Move(slideDir * currentMoveSpeed * 0.3f * Time.deltaTime);
                 
                 if (showDebugLogs)
                 {
@@ -398,22 +596,6 @@ public class PlayerController : MonoBehaviour
                 }
                 
                 break;
-            }
-        }
-    }
-    
-    private void UpdateAnimator()
-    {
-        if (animator != null)
-        {
-            // Update speed parameter
-            animator.SetFloat("speed", velocity.magnitude);
-            
-            // Try to update grounded parameter (safe check to avoid errors)
-            try {
-                animator.SetBool("grounded", isGrounded);
-            } catch {
-                // Parameter doesn't exist, that's fine
             }
         }
     }
@@ -501,6 +683,7 @@ public class PlayerController : MonoBehaviour
             // Draw character controller height
             Gizmos.color = new Color(0, 1, 1, 0.3f);
             Vector3 bottom = transform.position + characterController.center - Vector3.up * characterController.height * 0.5f;
+            // Define the top variable
             Vector3 top = transform.position + characterController.center + Vector3.up * characterController.height * 0.5f;
             Gizmos.DrawLine(bottom, top);
         }
