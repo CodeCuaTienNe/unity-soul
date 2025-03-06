@@ -57,10 +57,11 @@ public class PlayerController : MonoBehaviour
 
     // Dash settings
     [Header("Dash Settings")]
-    [SerializeField] private float dashSpeed = 15.0f;
-    [SerializeField] private float dashDuration = 0.3f;
-    [SerializeField] private float dashCooldown = 1.0f;
-    [SerializeField] private bool useDashTrail = true;
+    [SerializeField] private float dashSpeed = 5.0f;  // Keep current speed
+    [SerializeField] private float dashDuration = 0.3f;  // Changed from 4f to 0.3f for a quick dash
+    [SerializeField] private float dashCooldown = 2.0f;
+    [SerializeField] private bool useDashTrail = false;
+    [SerializeField] private bool useGravityDuringDash = true;  // New parameter
     private bool isDashing = false;
     private bool canDash = true;
     private float dashCooldownTimer = 0f;
@@ -91,7 +92,7 @@ public class PlayerController : MonoBehaviour
         InitializeComponents();
         currentMoveSpeed = walkSpeed; // Default to walking speed
         
-        // Get or create trail renderer for dash effect
+        // Only create trail renderer if useDashTrail is true
         if (useDashTrail)
         {
             dashTrail = GetComponent<TrailRenderer>();
@@ -105,6 +106,15 @@ public class PlayerController : MonoBehaviour
                 dashTrail.startColor = new Color(1f, 1f, 1f, 0.5f);
                 dashTrail.endColor = new Color(1f, 1f, 1f, 0f);
                 dashTrail.enabled = false;
+            }
+        }
+        else
+        {
+            // Remove trail renderer if it exists and we don't want to use it
+            dashTrail = GetComponent<TrailRenderer>();
+            if (dashTrail != null)
+            {
+                Destroy(dashTrail);
             }
         }
     }
@@ -220,7 +230,7 @@ public class PlayerController : MonoBehaviour
                 dashTrail.enabled = true;
             }
             
-            // Optional: Trigger dash animation
+            // Trigger dash animation
             if (animator != null)
             {
                 animator.SetTrigger("Dash");
@@ -338,11 +348,7 @@ public class PlayerController : MonoBehaviour
             dashTimer -= Time.deltaTime;
             if (dashTimer <= 0)
             {
-                isDashing = false;
-                if (dashTrail != null && useDashTrail)
-                {
-                    dashTrail.enabled = false;
-                }
+                EndDash();
             }
         }
         
@@ -451,8 +457,25 @@ public class PlayerController : MonoBehaviour
         // Set the running state
         animator.SetBool("isRunning", isRunning);
         
-        // Set dash state if we're dashing
-        animator.SetBool("isDashing", isDashing);
+        // Set dash state and speed up the animation
+        if (isDashing)
+        {
+            animator.SetBool("isDashing", true);
+            // Make sure this animation speed calculation uses the correct dashDuration value
+            animator.speed = 2.37f / dashDuration;  
+            
+            // Check if dash animation is finished
+            AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
+            if (currentState.IsName("Dash") && currentState.normalizedTime >= 1.0f)
+            {
+                EndDash();
+            }
+        }
+        else
+        {
+            animator.SetBool("isDashing", false);
+            animator.speed = 1f;  // Reset to normal speed when not dashing
+        }
         
         // Add jump progress for animation blending (0 to 1 value through jump animation)
         float jumpProgress = isJumping ? Mathf.Clamp01(jumpAnimationTimer / jumpAnimationDuration) : 0f;
@@ -460,6 +483,17 @@ public class PlayerController : MonoBehaviour
         
         // Track vertical velocity for blend trees
         animator.SetFloat("verticalVelocity", playerVelocity.y);
+    }
+    
+    private void EndDash()
+    {
+        isDashing = false;
+        if (dashTrail != null && useDashTrail)
+        {
+            dashTrail.enabled = false;
+        }
+        animator.SetBool("isDashing", false);
+        animator.speed = 1f;
     }
     
     private void DetectNearbyObstacles()
@@ -660,8 +694,9 @@ public class PlayerController : MonoBehaviour
         
         if (isDashing)
         {
-            // Override movement with dash
-            moveVector = new Vector3(dashDirection.x * dashSpeed, playerVelocity.y, dashDirection.z * dashSpeed);
+            // Apply dash movement but maintain gravity influence
+            float verticalVelocity = useGravityDuringDash ? playerVelocity.y : 0f;
+            moveVector = new Vector3(dashDirection.x * dashSpeed, verticalVelocity, dashDirection.z * dashSpeed);
         }
         else
         {
@@ -825,3 +860,4 @@ public class PlayerController : MonoBehaviour
         }
     }
 }
+
