@@ -540,6 +540,58 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1 &599032515
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 599032516}
+  - component: {fileID: 599032517}
+  m_Layer: 0
+  m_Name: ThrowRockSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &599032516
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 599032515}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.47465777, y: 0.48341504, z: 0.52411836, w: 0.5160523}
+  m_LocalPosition: {x: -0.4587, y: 0.6435, z: 0.0879}
+  m_LocalScale: {x: 0.009999997, y: 0.009999997, z: 0.009999998}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 988160927}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &599032517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 599032515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61163d2c32d338d48b06878add2ee088, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  objectToSpawn: {fileID: 5330684552257380995, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+  spawnPoint: {fileID: 599032516}
+  playerTransform: {fileID: 1010771456}
+  flySpeed: 5
+  homingBehavior: 0
+  spawnPositionRandomOffset: {x: 1, y: 1, z: 1}
+  spawnInterval: 2
+  continuousSpawning: 1
 --- !u!1 &669822270 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 0ccb55cad92a8a640a59f9375e95b364, type: 3}
@@ -646,11 +698,7 @@ MonoBehaviour:
   jumpAnimationDelay: 0
   useJumpTrigger: 1
   dashSpeed: 5
-<<<<<<< HEAD
-  dashDuration: 0.3
-=======
   dashDuration: 1
->>>>>>> f680bee792ea042647e2d5383f817b81541ea4c2
   dashCooldown: 2
   useDashTrail: 0
   useGravityDuringDash: 1
@@ -742,6 +790,11 @@ Transform:
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: fdae3dc44ce1449fba59856e36a06f07, type: 3}
   m_PrefabInstance: {fileID: 2119472633}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &988160927 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 0134ac0d6520a455ab2d6d00fdd25abe, type: 3}
+  m_PrefabInstance: {fileID: 1798252278}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1010771452
 GameObject:
@@ -1541,7 +1594,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 0134ac0d6520a455ab2d6d00fdd25abe, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 599032516}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0134ac0d6520a455ab2d6d00fdd25abe, type: 3}
 --- !u!1 &1883879482
