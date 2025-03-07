@@ -117,6 +117,15 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Dashing"",
+                    ""type"": ""Button"",
+                    ""id"": ""be2ce3cf-4941-4101-943e-554f243f6e59"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -196,6 +205,17 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""action"": ""Jumping"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4115b62d-893f-45de-9dec-fb0bc4ec2aa0"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Dashing"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -219,6 +239,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         m_Player_Moving = m_Player.FindAction("Moving", throwIfNotFound: true);
         m_Player_Running = m_Player.FindAction("Running", throwIfNotFound: true);
         m_Player_Jumping = m_Player.FindAction("Jumping", throwIfNotFound: true);
+        m_Player_Dashing = m_Player.FindAction("Dashing", throwIfNotFound: true);
     }
 
     ~@PlayerInput()
@@ -302,6 +323,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Moving;
     private readonly InputAction m_Player_Running;
     private readonly InputAction m_Player_Jumping;
+    private readonly InputAction m_Player_Dashing;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -325,6 +347,10 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/Jumping".
         /// </summary>
         public InputAction @Jumping => m_Wrapper.m_Player_Jumping;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Dashing".
+        /// </summary>
+        public InputAction @Dashing => m_Wrapper.m_Player_Dashing;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -360,6 +386,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @Jumping.started += instance.OnJumping;
             @Jumping.performed += instance.OnJumping;
             @Jumping.canceled += instance.OnJumping;
+            @Dashing.started += instance.OnDashing;
+            @Dashing.performed += instance.OnDashing;
+            @Dashing.canceled += instance.OnDashing;
         }
 
         /// <summary>
@@ -380,6 +409,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             @Jumping.started -= instance.OnJumping;
             @Jumping.performed -= instance.OnJumping;
             @Jumping.canceled -= instance.OnJumping;
+            @Dashing.started -= instance.OnDashing;
+            @Dashing.performed -= instance.OnDashing;
+            @Dashing.canceled -= instance.OnDashing;
         }
 
         /// <summary>
@@ -454,5 +486,12 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnJumping(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Dashing" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDashing(InputAction.CallbackContext context);
     }
 }
