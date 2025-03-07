@@ -14,6 +14,7 @@ public class PauseMenu : MonoBehaviour
             return;
         }
         pauseMenuUI.SetActive(false);
+        SetCursorState(false);
         Debug.Log("PauseMenu initialized");
     }
 
@@ -33,12 +34,19 @@ public class PauseMenu : MonoBehaviour
         }
     }
 
+    void SetCursorState(bool visible)
+    {
+        Cursor.visible = visible;
+        Cursor.lockState = visible ? CursorLockMode.None : CursorLockMode.Locked;
+    }
+
     public void Resume()
     {
         Debug.Log("Resuming game");
         pauseMenuUI.SetActive(false);
         Time.timeScale = 1f;
         gameIsPaused = false;
+        SetCursorState(false);
     }
 
     void Pause()
@@ -47,18 +55,20 @@ public class PauseMenu : MonoBehaviour
         pauseMenuUI.SetActive(true);
         Time.timeScale = 0f;
         gameIsPaused = true;
+        SetCursorState(true);
     }
 
     public void LoadMainMenu()
     {
         Debug.Log("Loading main menu");
         Time.timeScale = 1f;
+        SetCursorState(true);
         SceneManager.LoadScene(0);
     }
 
     public void QuitGame()
     {
-        Debug.Log("Quitting game");
-        Application.Quit();
+        gameIsPaused = false;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1 );
     }
 }

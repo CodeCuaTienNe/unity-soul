@@ -976,7 +976,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 0}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1558171301}
+        m_TargetAssemblyTypeName: PauseMenu, Assembly-CSharp
+        m_MethodName: QuitGame
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &802386027
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1807,7 +1819,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1284283762}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1558171302}
+        m_TargetAssemblyTypeName: VolumeController, Assembly-CSharp
+        m_MethodName: IncreaseVolume
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1284283762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1928,7 +1952,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1389004481}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1558171302}
+        m_TargetAssemblyTypeName: VolumeController, Assembly-CSharp
+        m_MethodName: DecreaseVolume
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1389004481
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2049,7 +2085,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1490988500}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1558171301}
+        m_TargetAssemblyTypeName: PauseMenu, Assembly-CSharp
+        m_MethodName: Resume
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1490988500
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2262,6 +2310,7 @@ GameObject:
   - component: {fileID: 1558171298}
   - component: {fileID: 1558171297}
   - component: {fileID: 1558171301}
+  - component: {fileID: 1558171302}
   m_Layer: 5
   m_Name: Menu
   m_TagString: Untagged
@@ -2365,6 +2414,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pauseMenuUI: {fileID: 1170462804}
+--- !u!114 &1558171302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1558171296}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6f6d6a0a1dfc400d8b4187e4feddec1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  volumeChangeAmount: 0.1
+  minVolume: 0
+  maxVolume: 1
+  volumeText: {fileID: 1837913969}
+  volumeSlider: {fileID: 0}
 --- !u!1001 &1798252278
 PrefabInstance:
   m_ObjectHideFlags: 0
