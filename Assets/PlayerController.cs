@@ -75,6 +75,23 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int healthRestoreAmount = 20; // Lượng máu hồi phục khi uống
     private bool isDrinking = false;
 
+    // Add these variables to your class after the existing settings
+    [Header("Attack Settings")]
+    [SerializeField] private float attackCooldown = 0.5f;
+    [SerializeField] private float attackDuration = 0.5f;
+    [SerializeField] private float attackRange = 1.5f;
+    [SerializeField] private float attackDamage = 20f;
+    [SerializeField] private bool useAttackCombo = false;
+    [SerializeField] private float comboTimeWindow = 0.4f;
+    [SerializeField] private LayerMask enemyLayer = -1;
+    [SerializeField] private bool showAttackHitbox = false;
+    private bool isHitting = false;
+    private float attackCooldownTimer = 0f;
+    private float attackTimer = 0f;
+    private int comboCount = 0;
+    private float comboTimer = 0f;
+    private bool canAttack = true;
+
     // Component references
     private Vector3 velocity;
     private Animator animator;
@@ -363,6 +380,9 @@ public class PlayerController : MonoBehaviour
             jumpCooldownTimer -= Time.deltaTime;
         }
         
+        // Update attack state
+        UpdateAttackState();
+        
         // Update dash timers
         if (isDashing)
         {
@@ -510,6 +530,15 @@ public class PlayerController : MonoBehaviour
         
         // Track vertical velocity for blend trees
         animator.SetFloat("verticalVelocity", playerVelocity.y);
+        
+        // Set attack state
+        animator.SetBool("isHitting", isHitting);
+        
+        // Set attack combo count for animation blending
+        if (useAttackCombo)
+        {
+            animator.SetInteger("attackCombo", comboCount);
+        }
     }
     
     private void EndDash()
@@ -885,6 +914,14 @@ public class PlayerController : MonoBehaviour
             Vector3 top = transform.position + characterController.center + Vector3.up * characterController.height * 0.5f;
             Gizmos.DrawLine(bottom, top);
         }
+        
+        // Show attack range when enabled
+        if (showAttackHitbox && isHitting)
+        {
+            Gizmos.color = new Color(1f, 0f, 0f, 0.5f);
+            Vector3 hitboxCenter = transform.position + transform.forward * (attackRange * 0.5f);
+            Gizmos.DrawSphere(hitboxCenter, attackRange * 0.5f);
+        }
     }
     
     // Called when character controller collides
@@ -944,6 +981,167 @@ public class PlayerController : MonoBehaviour
         // Thêm code hồi máu ở đây
         // Ví dụ: health += healthRestoreAmount;
         Debug.Log($"Đã hồi phục {healthRestoreAmount} điểm máu");
+    }
+
+    // Add this method to handle attack input from Input System
+    public void onAttack(InputAction.CallbackContext context)
+    {
+        // Only attack on button press (not release/hold), when not in cooldown and not already attacking
+        if (context.performed && !isHitting && attackCooldownTimer <= 0 && !isDrinking)
+        {
+            StartAttack();
+        }
+    }
+
+    // Method to start the attack sequence
+    private void StartAttack()
+    {
+        // Set attack state
+        isHitting = true;
+        attackTimer = attackDuration;
+        attackCooldownTimer = attackCooldown;
+        canAttack = false;
+        
+        // Handle combo
+        if (useAttackCombo)
+        {
+            // Reset combo if window expired
+            if (comboTimer <= 0)
+            {
+                comboCount = 0;
+            }
+            
+            // Increment combo counter (or cycle)
+            comboCount = (comboCount + 1) % 3;
+            if (comboCount == 0) comboCount = 1;
+            
+            // Reset combo timer
+            comboTimer = comboTimeWindow;
+            
+            if (showDebugLogs)
+            {
+                Debug.Log($"Attack combo: {comboCount}");
+            }
+        }
+        
+        // Trigger attack animation
+        if (animator != null)
+        {
+            if (useAttackCombo)
+            {
+                // Set the combo count for animation blending
+                animator.SetInteger("attackCombo", comboCount);
+            }
+            
+            // Trigger the attack animation
+            animator.SetBool("isHitting", true);
+            animator.SetTrigger("attack");
+            
+            if (showDebugLogs)
+            {
+                Debug.Log("Attack animation triggered");
+            }
+        }
+        
+        // Perform the actual attack with a slight delay to match animation
+        StartCoroutine(PerformAttackDamage(0.2f));
+    }
+
+    // Coroutine to perform attack damage at the appropriate time in the animation
+    // Modify the PerformAttackDamage method to work without HealthSystem
+private IEnumerator PerformAttackDamage(float delay)
+{
+    // Wait for the attack animation to reach the impact point
+    yield return new WaitForSeconds(delay);
+    
+    // Create attack hitbox in front of player
+    Vector3 hitboxCenter = transform.position + transform.forward * (attackRange * 0.5f);
+    Collider[] hitEnemies = Physics.OverlapSphere(hitboxCenter, attackRange * 0.5f, enemyLayer);
+    
+    // Apply damage to enemies
+    foreach (Collider enemy in hitEnemies)
+    {
+        // Log the hit for now (without needing HealthSystem)
+        if (showDebugLogs)
+        {
+            Debug.Log($"Hit enemy {enemy.name} for {attackDamage} damage");
+        }
+        
+        // Try to apply force to the enemy (if it has a rigidbody)
+        Rigidbody enemyRb = enemy.GetComponent<Rigidbody>();
+        if (enemyRb != null)
+        {
+            Vector3 knockbackDirection = (enemy.transform.position - transform.position).normalized;
+            enemyRb.AddForce(knockbackDirection * 5f + Vector3.up * 2f, ForceMode.Impulse);
+            
+            if (showDebugLogs)
+            {
+                Debug.Log($"Applied knockback to {enemy.name}");
+            }
+        }
+        
+        // Optional: Send a message to the enemy that it took damage
+        // This allows enemies to handle damage in their own way without requiring a specific component
+        enemy.SendMessage("TakeDamage", attackDamage, SendMessageOptions.DontRequireReceiver);
+    }
+}
+
+    // Add this to your Update method to handle attack timers and state
+    // Place this before the movement handling code in Update()
+    private void UpdateAttackState()
+    {
+        // Update attack cooldown timer
+        if (attackCooldownTimer > 0)
+        {
+            attackCooldownTimer -= Time.deltaTime;
+        }
+        
+        // Update attack timer
+        if (isHitting)
+        {
+            attackTimer -= Time.deltaTime;
+            
+            // End attack when timer expires
+            if (attackTimer <= 0)
+            {
+                EndAttack();
+            }
+        }
+        
+        // Update combo timer
+        if (comboTimer > 0)
+        {
+            comboTimer -= Time.deltaTime;
+        }
+        
+        // Legacy input check for attacking
+        if (Input.GetMouseButtonDown(0) && !isHitting && attackCooldownTimer <= 0 && !isDrinking && canAttack)
+        {
+            StartAttack();
+        }
+        
+        // Allow attack again after animation ends
+        if (!isHitting && !canAttack)
+        {
+            canAttack = true;
+        }
+    }
+
+    // Method to end the attack state
+    private void EndAttack()
+    {
+        isHitting = false;
+        
+        // Reset animation state
+        if (animator != null)
+        {
+            animator.SetBool("isHitting", false);
+        }
+        
+        if (showDebugLogs)
+        {
+            Debug.Log("Attack ended");
+        }
     }
 }
 
