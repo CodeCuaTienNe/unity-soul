@@ -69,13 +69,11 @@ public class PlayerController : MonoBehaviour
     private Vector3 dashDirection;
     private TrailRenderer dashTrail;
 
-    // Add these fields at the top of the class with other variables
-    [Header("Hit Settings")]
-    [SerializeField] private float hitAnimationDuration = 2f; // Duration of hit animation
-    [SerializeField] private bool useAnimationEvents = false; // Optional: Use animation events instead of timer
-    private bool isHitting = false;
-    private float hitTimer = 0f;
-    private bool canHit = true; // Add cooldown check
+    // Drinking settings
+    [Header("Drinking Settings")]
+    [SerializeField] private float drinkDuration = 5.0f;  // Thời gian hoàn thành animation uống (5 giây)
+    [SerializeField] private int healthRestoreAmount = 20; // Lượng máu hồi phục khi uống
+    private bool isDrinking = false;
 
     // Component references
     private Vector3 velocity;
@@ -181,6 +179,14 @@ public class PlayerController : MonoBehaviour
     // New method to handle Run input
     public void onRun(InputAction.CallbackContext context)
     {
+        // Nếu đang uống, không cho phép chạy nhanh
+        if (isDrinking)
+        {
+            isRunning = false;
+            currentMoveSpeed = walkSpeed;
+            return;
+        }
+        
         // Set running state based on button press/release
         if (context.started || context.performed)
         {
@@ -305,37 +311,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // Add this method to handle the new input system hit action
-    public void onHit(InputAction.CallbackContext context)
-    {
-        if (context.performed && !isHitting)
-        {
-            StartHit();
-        }
-    }
-
-    // Add this method to start the hit sequence
-    private void StartHit()
-    {
-        if (!canHit) return;
-        
-        isHitting = true;
-        canHit = false;
-        hitTimer = hitAnimationDuration;
-        
-        if (animator != null)
-        {
-            // Use trigger instead of bool for better animation control
-            animator.SetTrigger("Hit");
-            animator.SetBool("isHitting", true);
-        }
-        
-        if (showDebugLogs)
-        {
-            Debug.Log($"Hit started, duration: {hitAnimationDuration}");
-        }
-    }
-
     // Similarly, update the legacy input method
     private void CheckLegacyInput()
     {
@@ -371,12 +346,6 @@ public class PlayerController : MonoBehaviour
         {
             StartDash();
         }
-
-        // Add hit check using legacy input
-        if (Input.GetMouseButtonDown(0) && !isHitting)
-        {
-            StartHit();
-        }
     }
 
     // Update method changes for better jump animation tracking
@@ -386,26 +355,6 @@ public class PlayerController : MonoBehaviour
         {
             InitializeComponents();
             return;
-        }
-        
-        // Update hit state
-        if (isHitting)
-        {
-            hitTimer -= Time.deltaTime;
-            if (hitTimer <= 0)
-            {
-                EndHit();
-            }
-            
-            // Check if hit animation is actually complete
-            if (animator != null)
-            {
-                AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
-                if (currentState.IsName("Hit") && currentState.normalizedTime >= 1.0f)
-                {
-                    EndHit();
-                }
-            }
         }
         
         // Update jump cooldown timer
@@ -479,6 +428,12 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F))
         {
             AttemptUnstuck();
+        }
+        
+        // Kiểm tra phím R - chỉ khi không đang uống, đang đứng trên mặt đất và không đang dash/nhảy
+        if (Input.GetKeyDown(KeyCode.R) && !isDrinking && isGrounded && !isDashing && !isJumping)
+        {
+            StartDrinking();
         }
     }
 
@@ -555,26 +510,6 @@ public class PlayerController : MonoBehaviour
         
         // Track vertical velocity for blend trees
         animator.SetFloat("verticalVelocity", playerVelocity.y);
-
-        // Add hit animation state
-        animator.SetBool("isHitting", isHitting);
-
-        // Update hit state
-        if (isHitting)
-        {
-            AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
-            if (currentState.IsName("Hit"))
-            {
-                // Keep the animation playing at normal speed
-                animator.speed = 1.0f;
-                
-                // Optional: Debug log for animation progress
-                if (showDebugLogs && Time.frameCount % 30 == 0) // Log every 30 frames
-                {
-                    Debug.Log($"Hit animation progress: {currentState.normalizedTime}");
-                }
-            }
-        }
     }
     
     private void EndDash()
@@ -772,6 +707,19 @@ public class PlayerController : MonoBehaviour
         // Keep track of velocity for animation - Normalize for direction but keep magnitude for speed blend
         velocity = desiredMoveDirection * moveInput.magnitude;
         
+        // Nếu đang uống, giảm tốc độ di chuyển
+        if (isDrinking)
+        {
+            // Vẫn cho phép di chuyển nhưng với tốc độ đi bộ
+            isRunning = false;
+            currentMoveSpeed = walkSpeed * 0.7f; // Giảm tốc độ xuống 70% tốc độ đi bộ
+        }
+        else
+        {
+            // Apply current movement speed (walk or run)
+            currentMoveSpeed = isRunning ? runSpeed : walkSpeed;
+        }
+        
         // Apply current movement speed (walk or run)
         moveDirection = desiredMoveDirection * currentMoveSpeed;
         
@@ -952,36 +900,50 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void EndHit()
+    // Phương thức bắt đầu uống
+    private void StartDrinking()
     {
-        isHitting = false;
+        isDrinking = true;
+        
+        // Kích hoạt animation uống
         if (animator != null)
         {
-            animator.SetBool("isHitting", false);
+            animator.SetBool("isDrinking", true);
+            
+            // Tăng tốc độ animation
+            animator.speed = 1.5f; // Tăng tốc độ lên 1.5 lần
         }
         
-        // Add small delay before allowing next hit
-        StartCoroutine(ResetHitCooldown());
+        // Hẹn giờ để kết thúc animation sau 5 giây
+        StartCoroutine(EndDrinkingAfterDelay(drinkDuration));
+    }
+
+    // Phương thức kết thúc uống sau một khoảng thời gian
+    private IEnumerator EndDrinkingAfterDelay(float duration)
+    {
+        // Đợi animation hoàn thành trong thời gian được chỉ định
+        yield return new WaitForSeconds(duration);
         
-        if (showDebugLogs)
+        // Kết thúc uống
+        isDrinking = false;
+        
+        // Tắt animation và đặt lại tốc độ
+        if (animator != null)
         {
-            Debug.Log("Hit ended");
+            animator.SetBool("isDrinking", false);
+            animator.speed = 1.0f; // Đặt lại tốc độ bình thường
         }
+        
+        // Hồi phục máu
+        RestoreHealth();
     }
 
-    private IEnumerator ResetHitCooldown()
+    // Phương thức hồi phục máu
+    private void RestoreHealth()
     {
-        yield return new WaitForSeconds(0.1f); // Small buffer between hits
-        canHit = true;
-    }
-
-    // Optional: Animation Event methods
-    public void OnHitAnimationComplete()
-    {
-        if (useAnimationEvents)
-        {
-            EndHit();
-        }
+        // Thêm code hồi máu ở đây
+        // Ví dụ: health += healthRestoreAmount;
+        Debug.Log($"Đã hồi phục {healthRestoreAmount} điểm máu");
     }
 }
 
