@@ -58,7 +58,7 @@ public class PlayerController : MonoBehaviour
     // Dash settings
     [Header("Dash Settings")]
     [SerializeField] private float dashSpeed = 5.0f;  // Keep current speed
-    [SerializeField] private float dashDuration = 0.3f;  // Changed from 4f to 0.3f for a quick dash
+    [SerializeField] private float dashDuration = 1f;  // Changed from 4f to 0.3f for a quick dash
     [SerializeField] private float dashCooldown = 2.0f;
     [SerializeField] private bool useDashTrail = false;
     [SerializeField] private bool useGravityDuringDash = true;  // New parameter
@@ -208,33 +208,40 @@ public class PlayerController : MonoBehaviour
     // Method to start dash
     private void StartDash()
     {
-        // Only dash if we have some movement input
+        // Use movement input if available, otherwise use facing direction
         if (moveInput.magnitude > 0.1f)
         {
-            isDashing = true;
-            canDash = false;
-            dashTimer = dashDuration;
-            dashCooldownTimer = dashCooldown;
-            
-            // Use the current move direction
             dashDirection = GetMovementDirection().normalized;
-            
-            if (showDebugLogs)
-            {
-                Debug.Log("Dash started");
-            }
-            
-            // Enable trail effect if available
-            if (dashTrail != null && useDashTrail)
-            {
-                dashTrail.enabled = true;
-            }
-            
-            // Trigger dash animation
-            if (animator != null)
-            {
-                animator.SetTrigger("Dash");
-            }
+        }
+        else
+        {
+            // Use the direction the player is facing when no movement input
+            dashDirection = transform.forward;
+        }
+
+        // Add a small forward offset to the dash direction
+        dashDirection = (dashDirection + transform.forward * 0.5f).normalized;
+
+        isDashing = true;
+        canDash = false;
+        dashTimer = dashDuration;
+        dashCooldownTimer = dashCooldown;
+        
+        if (showDebugLogs)
+        {
+            Debug.Log("Dash started");
+        }
+        
+        // Enable trail effect if available
+        if (dashTrail != null && useDashTrail)
+        {
+            dashTrail.enabled = true;
+        }
+        
+        // Trigger dash animation
+        if (animator != null)
+        {
+            animator.SetTrigger("Dash");
         }
     }
     
@@ -462,7 +469,7 @@ public class PlayerController : MonoBehaviour
         {
             animator.SetBool("isDashing", true);
             // Make sure this animation speed calculation uses the correct dashDuration value
-            animator.speed = 2.37f / dashDuration;  
+            animator.speed = 2f / dashDuration;  
             
             // Check if dash animation is finished
             AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
