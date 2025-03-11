@@ -6,6 +6,7 @@ using System.Collections;
 public class PlayerController : MonoBehaviour
 {
     [Header("Sword Settings")]
+
     [SerializeField] private GameObject swordColliderObject;
     [SerializeField] private SwordDamage swordColliderScript;
     // Movement settings
@@ -117,7 +118,16 @@ public class PlayerController : MonoBehaviour
     {
         InitializeComponents();
         currentMoveSpeed = walkSpeed; // Default to walking speed
-        
+        // Find SwordDamage component if it's not assigned
+    if (swordColliderScript == null && swordColliderObject != null)
+    {
+        swordColliderScript = swordColliderObject.GetComponent<SwordDamage>();
+        if (swordColliderScript == null)
+        {
+            Debug.LogWarning("SwordDamage component not found on swordColliderObject. Adding one now.");
+            swordColliderScript = swordColliderObject.AddComponent<SwordDamage>();
+        }
+    }
         // Only create trail renderer if useDashTrail is true
         if (useDashTrail)
         {
@@ -1072,40 +1082,63 @@ public void DisableSwordDamage()
 
     // Coroutine to perform attack damage at the appropriate time in the animation
     // Modify the PerformAttackDamage method to work without HealthSystem
+// Coroutine to perform attack damage at the appropriate time in the animation
 private IEnumerator PerformAttackDamage(float delay)
 {
     // Wait for the attack animation to reach the impact point
     yield return new WaitForSeconds(delay);
     
-    // Create attack hitbox in front of player
-    Vector3 hitboxCenter = transform.position + transform.forward * (attackRange * 0.5f);
-    Collider[] hitEnemies = Physics.OverlapSphere(hitboxCenter, attackRange * 0.5f, enemyLayer);
-    
-    // Apply damage to enemies
-    foreach (Collider enemy in hitEnemies)
+    // Enable sword damage via the SwordDamage component
+    if (swordColliderScript != null)
     {
-        // Log the hit for now (without needing HealthSystem)
+        swordColliderScript.EnableDamage();
+        
         if (showDebugLogs)
         {
-            Debug.Log($"Hit enemy {enemy.name} for {attackDamage} damage");
+            Debug.Log("Sword damage enabled during attack");
         }
         
-        // Try to apply force to the enemy (if it has a rigidbody)
-        Rigidbody enemyRb = enemy.GetComponent<Rigidbody>();
-        if (enemyRb != null)
+        // Keep sword damage active for a short period during swing
+        float damageActiveTime = 0.3f; // Time sword can deal damage
+        yield return new WaitForSeconds(damageActiveTime);
+        
+        // Disable sword damage after the active period
+        swordColliderScript.DisableDamage();
+        
+        if (showDebugLogs)
         {
-            Vector3 knockbackDirection = (enemy.transform.position - transform.position).normalized;
-            enemyRb.AddForce(knockbackDirection * 5f + Vector3.up * 2f, ForceMode.Impulse);
-            
+            Debug.Log("Sword damage disabled after attack");
+        }
+    }
+    else
+    {
+        // Fallback to the old method if SwordDamage component isn't set
+        Debug.LogWarning("SwordDamage component not assigned! Using fallback attack method.");
+        
+        // Create attack hitbox in front of player
+        Vector3 hitboxCenter = transform.position + transform.forward * (attackRange * 0.5f);
+        Collider[] hitEnemies = Physics.OverlapSphere(hitboxCenter, attackRange * 0.5f, enemyLayer);
+        
+        // Apply damage to enemies
+        foreach (Collider enemy in hitEnemies)
+        {
+            // Log the hit
             if (showDebugLogs)
             {
-                Debug.Log($"Applied knockback to {enemy.name}");
+                Debug.Log($"Hit enemy {enemy.name} for {attackDamage} damage");
             }
+            
+            // Try to apply force to the enemy (if it has a rigidbody)
+            Rigidbody enemyRb = enemy.GetComponent<Rigidbody>();
+            if (enemyRb != null)
+            {
+                Vector3 knockbackDirection = (enemy.transform.position - transform.position).normalized;
+                enemyRb.AddForce(knockbackDirection * 5f + Vector3.up * 2f, ForceMode.Impulse);
+            }
+            
+            // Send message to enemy
+            enemy.SendMessage("TakeDamage", attackDamage, SendMessageOptions.DontRequireReceiver);
         }
-        
-        // Optional: Send a message to the enemy that it took damage
-        // This allows enemies to handle damage in their own way without requiring a specific component
-        enemy.SendMessage("TakeDamage", attackDamage, SendMessageOptions.DontRequireReceiver);
     }
 }
 
@@ -1166,5 +1199,88 @@ private IEnumerator PerformAttackDamage(float delay)
             Debug.Log("Attack ended");
         }
     }
+
+    // Add this method right after your EndAttack method
+[ContextMenu("Debug Sword Attack System")]
+public void DebugSwordAttackSystem()
+{
+    Debug.Log("=== SWORD ATTACK DEBUGGING ===");
+    
+    // Check sword reference
+    if (swordColliderObject == null)
+    {
+        Debug.LogError("ERROR: Sword Collider Object reference is null! Assign it in the inspector.");
+    }
+    else
+    {
+        Debug.Log($"Sword Collider Object: {swordColliderObject.name}");
+    }
+    
+    // Check sword damage script
+    if (swordColliderScript == null)
+    {
+        Debug.LogError("ERROR: Sword Damage Script reference is null! Assign it in the inspector.");
+    }
+    else
+    {
+        Debug.Log($"Sword Damage Script: {swordColliderScript.name}");
+        Debug.Log($"Damage amount: {swordColliderScript.damage}");
+        Debug.Log($"Can deal damage: {swordColliderScript.canDealDamage}");
+        
+        // Check layers
+        Debug.Log($"Damage Layers: {LayerMaskToString(swordColliderScript.damageLayers)}");
+    }
+    
+    // Check for boss objects
+    BossHealthBarController[] bosses = FindObjectsOfType<BossHealthBarController>();
+    Debug.Log($"Found {bosses.Length} boss objects in scene:");
+    foreach (var boss in bosses)
+    {
+        int bossLayer = boss.gameObject.layer;
+        Debug.Log($"- Boss: {boss.name} on layer {bossLayer} ({LayerMask.LayerToName(bossLayer)})");
+        Debug.Log($"  Health: {boss.luongMauHienTai}/{boss.luongMauToiDa}");
+        
+        // Check if boss layer is in damage layers
+        bool canDamageBoss = ((1 << bossLayer) & (swordColliderScript != null ? swordColliderScript.damageLayers.value : 0)) != 0;
+        Debug.Log($"  Can be damaged by sword: {canDamageBoss}");
+    }
+    
+    // Check distance to closest boss
+    if (bosses.Length > 0)
+    {
+        float closestDistance = float.MaxValue;
+        BossHealthBarController closestBoss = null;
+        
+        foreach (var boss in bosses)
+        {
+            float distance = Vector3.Distance(transform.position, boss.transform.position);
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestBoss = boss;
+            }
+        }
+        
+        if (closestBoss != null)
+        {
+            Debug.Log($"Closest boss '{closestBoss.name}' is {closestDistance:F2} units away");
+            Debug.Log($"Attack range: {attackRange} units");
+        }
+    }
+}
+
+private string LayerMaskToString(LayerMask layerMask)
+{
+    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+    for (int i = 0; i < 32; i++)
+    {
+        if ((layerMask.value & (1 << i)) != 0)
+        {
+            if (sb.Length > 0) sb.Append(", ");
+            sb.Append(LayerMask.LayerToName(i));
+        }
+    }
+    return sb.ToString();
+}
 }
 
