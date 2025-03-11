@@ -69,18 +69,26 @@ public class RandomSpawner : MonoBehaviour
     }
 
     // Spawn a single object at random X and Z positions
-    private void SpawnObject()
+    // In your SpawnObject method:
+private void SpawnObject()
+{
+    // Calculate random X and Z positions within the specified ranges
+    float randomX = Random.Range(minX, maxX);
+    float randomZ = Random.Range(minZ, maxZ);
+
+    // Create the new position vector with random X and Z but fixed Y
+    Vector3 spawnPosition = new Vector3(randomX, spawnHeight, randomZ);
+
+    // Instantiate the object at the calculated position
+    GameObject rock = Instantiate(objectToSpawn, spawnPosition, Quaternion.identity);
+    
+    // Make sure the rock has the DamagingRock component
+    if (rock.GetComponent<DamagingRock>() == null)
     {
-        // Calculate random X and Z positions within the specified ranges
-        float randomX = Random.Range(minX, maxX);
-        float randomZ = Random.Range(minZ, maxZ);
-
-        // Create the new position vector with random X and Z but fixed Y
-        Vector3 spawnPosition = new Vector3(randomX, spawnHeight, randomZ);
-
-        // Instantiate the object at the calculated position
-        Instantiate(objectToSpawn, spawnPosition, Quaternion.identity);
+        DamagingRock damagingRock = rock.AddComponent<DamagingRock>();
+        damagingRock.damage = 1f; // Set default damage value
     }
+}
 
     // Public method to spawn an object (can be called from other scripts or events)
     public void SpawnNow()

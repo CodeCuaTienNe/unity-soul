@@ -6,12 +6,32 @@ public class BossHealthBarController : MonoBehaviour
     public BossHealthBar bossHealthBar;
     public float luongMauHienTai;
     public float luongMauToiDa = 12000;
+    
     void Start()
     {
-        luongMauHienTai = 6000;
+        luongMauHienTai = luongMauToiDa; // Start with full health
         bossHealthBar.capNhatThanhMau(luongMauHienTai, luongMauToiDa);
     }
 
-    // Update is called once per frame
-    
+    // Method to handle taking damage
+    public void TakeDamage(float damage)
+    {
+        luongMauHienTai -= damage;
+        
+        // Ensure health doesn't go below zero
+        if (luongMauHienTai < 0)
+        {
+            luongMauHienTai = 0;
+        }
+        
+        // Update the boss health bar
+        bossHealthBar.capNhatThanhMau(luongMauHienTai, luongMauToiDa);
+        
+        // Check if boss is defeated
+        if (luongMauHienTai <= 0)
+        {
+            Debug.Log("Boss defeated!");
+            // You can add boss defeat logic here
+        }
+    }
 }

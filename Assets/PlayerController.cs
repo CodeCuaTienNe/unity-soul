@@ -5,6 +5,9 @@ using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
+    [Header("Sword Settings")]
+    [SerializeField] private GameObject swordColliderObject;
+    [SerializeField] private SwordDamage swordColliderScript;
     // Movement settings
     [Header("Movement Settings")]
     [SerializeField] private float walkSpeed = 2.0f;  // New walk speed
@@ -141,6 +144,26 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
+
+    // Called by animation events at the start of the attack swing
+public void EnableSwordDamage()
+{
+    if (swordColliderScript != null)
+    {
+        swordColliderScript.canDealDamage = true;
+        Debug.Log("Sword damage enabled");
+    }
+}
+
+// Called by animation events at the end of the attack swing
+public void DisableSwordDamage()
+{
+    if (swordColliderScript != null)
+    {
+        swordColliderScript.canDealDamage = false;
+        Debug.Log("Sword damage disabled");
+    }
+}
 
     private void InitializeComponents()
     {
