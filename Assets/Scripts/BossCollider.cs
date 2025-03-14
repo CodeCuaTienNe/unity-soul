@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections; // Add this for coroutines
 
 public class BossCollider : MonoBehaviour
 {
@@ -56,7 +57,16 @@ public class BossCollider : MonoBehaviour
         // You can add any death effects here
         Debug.Log("Boss defeated!");
         
-        // Optional: Destroy the boss object
+        // Start coroutine to destroy the boss after delay
+        StartCoroutine(DestroyAfterDelay(3f));
+    }
+    
+    private IEnumerator DestroyAfterDelay(float delay)
+    {
+        // Wait for the specified number of seconds
+        yield return new WaitForSeconds(delay);
+        
+        // Then destroy the gameObject
         Destroy(gameObject);
     }
 }
