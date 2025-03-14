@@ -14,15 +14,19 @@ public class PlayerHealthController : MonoBehaviour
         healthBarScript.capNhatThanhMau(luongMauHienTai, luongMauToiDa);
     }
 
-    private void OnMouseDown()
-    {
-        luongMauHienTai = luongMauHienTai - 1;
-        healthBarScript.capNhatThanhMau(luongMauHienTai, luongMauToiDa);
-    }
+    // Xóa hoặc vô hiệu hóa phương thức OnMouseDown để ngăn không cho người chơi tự mất máu khi nhấn chuột trái
+    // private void OnMouseDown()
+    // {
+    //     luongMauHienTai = luongMauHienTai - 1;
+    //     healthBarScript.capNhatThanhMau(luongMauHienTai, luongMauToiDa);
+    // }
 
     // New method to take damage from rocks
     public void TakeDamage(float damage)
     {
+        // Thêm log để debug
+        Debug.Log($"Player taking damage: {damage}. Called from: {new System.Diagnostics.StackTrace().ToString()}");
+        
         luongMauHienTai -= damage;
         
         // Make sure health doesn't go below zero

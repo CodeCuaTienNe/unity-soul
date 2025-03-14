@@ -1081,66 +1081,133 @@ public void DisableSwordDamage()
     }
 
     // Coroutine to perform attack damage at the appropriate time in the animation
-    // Modify the PerformAttackDamage method to work without HealthSystem
-// Coroutine to perform attack damage at the appropriate time in the animation
-private IEnumerator PerformAttackDamage(float delay)
-{
-    // Wait for the attack animation to reach the impact point
-    yield return new WaitForSeconds(delay);
-    
-    // Enable sword damage via the SwordDamage component
-    if (swordColliderScript != null)
+    private IEnumerator PerformAttackDamage(float delay)
     {
-        swordColliderScript.EnableDamage();
+        // Wait for the attack animation to reach the impact point
+        yield return new WaitForSeconds(delay);
         
-        if (showDebugLogs)
+        // Enable sword damage via the SwordDamage component
+        if (swordColliderScript != null)
         {
-            Debug.Log("Sword damage enabled during attack");
-        }
-        
-        // Keep sword damage active for a short period during swing
-        float damageActiveTime = 0.3f; // Time sword can deal damage
-        yield return new WaitForSeconds(damageActiveTime);
-        
-        // Disable sword damage after the active period
-        swordColliderScript.DisableDamage();
-        
-        if (showDebugLogs)
-        {
-            Debug.Log("Sword damage disabled after attack");
-        }
-    }
-    else
-    {
-        // Fallback to the old method if SwordDamage component isn't set
-        Debug.LogWarning("SwordDamage component not assigned! Using fallback attack method.");
-        
-        // Create attack hitbox in front of player
-        Vector3 hitboxCenter = transform.position + transform.forward * (attackRange * 0.5f);
-        Collider[] hitEnemies = Physics.OverlapSphere(hitboxCenter, attackRange * 0.5f, enemyLayer);
-        
-        // Apply damage to enemies
-        foreach (Collider enemy in hitEnemies)
-        {
-            // Log the hit
+            swordColliderScript.EnableDamage();
+            
             if (showDebugLogs)
             {
-                Debug.Log($"Hit enemy {enemy.name} for {attackDamage} damage");
+                Debug.Log("Sword damage enabled during attack");
             }
             
-            // Try to apply force to the enemy (if it has a rigidbody)
-            Rigidbody enemyRb = enemy.GetComponent<Rigidbody>();
-            if (enemyRb != null)
+            // Keep sword damage active for a short period during swing
+            float damageActiveTime = 0.3f; // Time sword can deal damage
+            yield return new WaitForSeconds(damageActiveTime);
+            
+            // Disable sword damage after the active period
+            swordColliderScript.DisableDamage();
+            
+            if (showDebugLogs)
             {
-                Vector3 knockbackDirection = (enemy.transform.position - transform.position).normalized;
-                enemyRb.AddForce(knockbackDirection * 5f + Vector3.up * 2f, ForceMode.Impulse);
+                Debug.Log("Sword damage disabled after attack");
             }
+        }
+        else
+        {
+            // Fallback to the old method if SwordDamage component isn't set
+            Debug.LogWarning("SwordDamage component not assigned! Using fallback attack method.");
             
-            // Send message to enemy
-            enemy.SendMessage("TakeDamage", attackDamage, SendMessageOptions.DontRequireReceiver);
+            // Create attack hitbox in front of player
+            Vector3 hitboxCenter = transform.position + transform.forward * (attackRange * 0.5f);
+            Collider[] hitEnemies = Physics.OverlapSphere(hitboxCenter, attackRange * 0.5f, enemyLayer);
+            
+            // Get player's health controller for comparison
+            PlayerHealthController playerHealth = GetComponent<PlayerHealthController>();
+            
+            // Apply damage to enemies
+            foreach (Collider enemy in hitEnemies)
+            {
+                // Skip if this is the player itself or has the player's health controller
+                if (enemy.gameObject == gameObject || enemy.GetComponent<PlayerHealthController>() == playerHealth)
+                {
+                    if (showDebugLogs)
+                    {
+                        Debug.Log($"Skipping self-damage to player: {enemy.name}");
+                    }
+                    continue;
+                }
+                
+                // Skip if this is a child of the player
+                if (enemy.transform.IsChildOf(transform))
+                {
+                    if (showDebugLogs)
+                    {
+                        Debug.Log($"Skipping damage to player's child object: {enemy.name}");
+                    }
+                    continue;
+                }
+                
+                // Skip if this has the Player tag
+                if (enemy.CompareTag("Player"))
+                {
+                    if (showDebugLogs)
+                    {
+                        Debug.Log($"Skipping damage to object with Player tag: {enemy.name}");
+                    }
+                    continue;
+                }
+                
+                // Kiểm tra thêm: Bỏ qua nếu đối tượng là một phần của người chơi
+                Transform parent = enemy.transform.parent;
+                bool isPartOfPlayer = false;
+                while (parent != null)
+                {
+                    if (parent.gameObject == gameObject || parent.CompareTag("Player"))
+                    {
+                        isPartOfPlayer = true;
+                        break;
+                    }
+                    parent = parent.parent;
+                }
+                
+                if (isPartOfPlayer)
+                {
+                    if (showDebugLogs)
+                    {
+                        Debug.Log($"Skipping damage to part of player: {enemy.name}");
+                    }
+                    continue;
+                }
+                
+                // Log the hit
+                if (showDebugLogs)
+                {
+                    Debug.Log($"Hit enemy {enemy.name} for {attackDamage} damage");
+                }
+                
+                // Try to apply force to the enemy (if it has a rigidbody)
+                Rigidbody enemyRb = enemy.GetComponent<Rigidbody>();
+                if (enemyRb != null)
+                {
+                    Vector3 knockbackDirection = (enemy.transform.position - transform.position).normalized;
+                    enemyRb.AddForce(knockbackDirection * 5f + Vector3.up * 2f, ForceMode.Impulse);
+                }
+                
+                // Send message to enemy - ONLY if it's not the player or a child of the player
+                BossHealthBarController bossHealth = enemy.GetComponent<BossHealthBarController>();
+                if (bossHealth != null)
+                {
+                    // If it has a boss health controller, damage it directly
+                    bossHealth.TakeDamage(attackDamage);
+                    if (showDebugLogs)
+                    {
+                        Debug.Log($"Applied damage to boss: {enemy.name}");
+                    }
+                }
+                else
+                {
+                    // Otherwise send a generic message
+                    enemy.SendMessage("TakeDamage", attackDamage, SendMessageOptions.DontRequireReceiver);
+                }
+            }
         }
     }
-}
 
     // Add this to your Update method to handle attack timers and state
     // Place this before the movement handling code in Update()

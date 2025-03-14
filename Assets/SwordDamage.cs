@@ -19,6 +19,8 @@ public class SwordDamage : MonoBehaviour
     
     // Reference to the player controller to prevent self-damage
     private PlayerController playerController;
+    private GameObject playerObject;
+    private PlayerHealthController playerHealth;
     
     // Track hit objects to prevent multiple hits in the same swing
     private System.Collections.Generic.HashSet<Collider> hitObjectsThisSwing = new System.Collections.Generic.HashSet<Collider>();
@@ -30,6 +32,11 @@ public class SwordDamage : MonoBehaviour
         while (parent != null && playerController == null)
         {
             playerController = parent.GetComponent<PlayerController>();
+            if (playerController != null)
+            {
+                playerObject = parent.gameObject;
+                playerHealth = parent.GetComponent<PlayerHealthController>();
+            }
             parent = parent.parent;
         }
         
@@ -79,10 +86,34 @@ public class SwordDamage : MonoBehaviour
             return;
         }
         
-        // Check if this is the player to prevent self-damage
-        if (playerController != null && other.gameObject == playerController.gameObject)
+        // Kiểm tra kỹ lưỡng để tránh gây sát thương cho người chơi
+        
+        // Kiểm tra 1: Đối tượng va chạm có phải là người chơi không
+        if (playerObject != null && other.gameObject == playerObject)
         {
-            if (showDebug) Debug.Log("Collision ignored: Prevented self-damage");
+            if (showDebug) Debug.Log("Collision ignored: Prevented self-damage to player");
+            return;
+        }
+        
+        // Kiểm tra 2: Đối tượng va chạm có phải là con của người chơi không
+        if (playerObject != null && other.transform.IsChildOf(playerObject.transform))
+        {
+            if (showDebug) Debug.Log("Collision ignored: Prevented damage to player's child object");
+            return;
+        }
+        
+        // Kiểm tra 3: Đối tượng va chạm có tag "Player" không
+        if (other.CompareTag("Player"))
+        {
+            if (showDebug) Debug.Log("Collision ignored: Object has Player tag");
+            return;
+        }
+        
+        // Kiểm tra 4: Đối tượng va chạm có PlayerHealthController không
+        PlayerHealthController otherPlayerHealth = other.GetComponent<PlayerHealthController>();
+        if (otherPlayerHealth != null)
+        {
+            if (showDebug) Debug.Log("Collision ignored: Object has PlayerHealthController");
             return;
         }
         
