@@ -7,12 +7,24 @@ public class BossCollider : MonoBehaviour
     
     // Reference to the health bar script
     public BossHealthBar bossHealthBar;
+    
+    // Optional reference to a boss model (if it's a child of this object)
+    public GameObject bossModel;
 
     void Start()
     {
         currentHP = maxHP;
-        // Initialize the health bar
-        bossHealthBar.capNhatThanhMau(currentHP, maxHP);
+        
+        // Initialize the health bar if assigned
+        if (bossHealthBar != null)
+        {
+            Debug.Log("Initial health bar update: " + currentHP + "/" + maxHP);
+            bossHealthBar.capNhatThanhMau(currentHP, maxHP);
+        }
+        else
+        {
+            Debug.LogError("No health bar assigned to BossCollider! Please assign it in the Inspector.");
+        }
     }
 
     public void TakeDamage(int damage)
@@ -20,7 +32,17 @@ public class BossCollider : MonoBehaviour
         currentHP -= damage;
         
         // Update the health bar
-        bossHealthBar.capNhatThanhMau(currentHP, maxHP);
+        if (bossHealthBar != null)
+        {
+            Debug.Log("Updating health bar after damage: " + currentHP + "/" + maxHP);
+            bossHealthBar.capNhatThanhMau(currentHP, maxHP);
+        }
+        else
+        {
+            Debug.LogError("Cannot update health bar: Reference is missing!");
+        }
+
+        Debug.Log($"Boss took {damage} damage. Current HP: {currentHP}/{maxHP}");
 
         // Check if boss is dead
         if (currentHP <= 0)
