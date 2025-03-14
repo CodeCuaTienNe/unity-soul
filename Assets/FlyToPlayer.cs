@@ -6,26 +6,44 @@ using UnityEngine;
 public class FlyToPlayer : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float rotationSpeed = 3f;
-    [SerializeField] private float accelerationTime = 1f;
-    [SerializeField] private AnimationCurve accelerationCurve;
+    [Tooltip("Speed at which the object flies toward the player")]
+    public float moveSpeed = 5f;
+    
+    [Tooltip("How fast the object rotates to face its movement direction")]
+    public float rotationSpeed = 3f;
+    
+    [Tooltip("Time it takes to reach full speed")]
+    public float accelerationTime = 1f;
+    
+    [Tooltip("Curve that controls how speed increases over time")]
+    public AnimationCurve accelerationCurve;
 
     [Header("Target Settings")]
-    [SerializeField] private bool findPlayerOnStart = true;
-    [SerializeField] private string playerTag = "Player";
-    [SerializeField] private LayerMask ignoreLayerMask;
+    [Tooltip("Whether to automatically find and target the player on start")]
+    public bool findPlayerOnStart = true;
+    
+    [Tooltip("Tag used to find the player object")]
+    public string playerTag = "Player";
+    
+    [Tooltip("Layers to ignore when colliding")]
+    public LayerMask ignoreLayerMask;
 
     [Header("Behavior Settings")]
-    [SerializeField] private float maxLifetime = 15f;
-    [SerializeField] private bool destroyOnPlayerCollision = true;
-    [SerializeField] private GameObject hitEffect;
+    [Tooltip("Maximum lifetime in seconds before self-destruction")]
+    public float maxLifetime = 15f;
+    
+    [Tooltip("Whether to destroy this object when it hits the player")]
+    public bool destroyOnPlayerCollision = true;
+    
+    [Tooltip("Effect to spawn when hitting the player")]
+    public GameObject hitEffect;
 
     // References
     private Rigidbody rb;
     private float currentSpeed;
     private float accelerationProgress = 0f;
     private bool isInitialized = false;
+    private DamagingRock damagingRock;
 
     // The fixed target position (player's position at spawn time)
     private Vector3 targetPosition;
@@ -34,13 +52,14 @@ public class FlyToPlayer : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        damagingRock = GetComponent<DamagingRock>();
 
         // Make sure rigidbody is set up correctly
         rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.FreezeRotation; // Prevent physics rotation
 
         // Set default acceleration curve if none provided
-        if (accelerationCurve.length == 0)
+        if (accelerationCurve == null || accelerationCurve.length == 0)
         {
             accelerationCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         }
@@ -58,6 +77,16 @@ public class FlyToPlayer : MonoBehaviour
         {
             Destroy(gameObject, maxLifetime);
         }
+        
+        // If we have a DamagingRock component, make sure it's configured correctly
+        if (damagingRock != null)
+        {
+            // We'll handle destruction in this component, so disable auto-destruction in DamagingRock
+            damagingRock.destroyOnAnyImpact = false;
+            
+            // Log that we're working with a DamagingRock
+            Debug.Log("FlyToPlayer is working with a DamagingRock component");
+        }
     }
 
     public void FindPlayerOnce()
@@ -74,6 +103,8 @@ public class FlyToPlayer : MonoBehaviour
 
             isInitialized = true;
             StartCoroutine(AccelerateTowardsTarget());
+            
+            Debug.Log($"FlyToPlayer targeting player at position {targetPosition}");
         }
         else
         {
@@ -87,6 +118,8 @@ public class FlyToPlayer : MonoBehaviour
         flyDirection = (targetPosition - transform.position).normalized;
         isInitialized = true;
         StartCoroutine(AccelerateTowardsTarget());
+        
+        Debug.Log($"FlyToPlayer targeting custom position {targetPosition}");
     }
 
     private IEnumerator AccelerateTowardsTarget()
@@ -123,11 +156,21 @@ public class FlyToPlayer : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        HandleCollision(collision.gameObject);
+    }
+    
+    private void OnTriggerEnter(Collider other)
+    {
+        HandleCollision(other.gameObject);
+    }
+    
+    private void HandleCollision(GameObject other)
+    {
         // Check if we hit the player
-        if (collision.gameObject.CompareTag(playerTag))
+        if (other.CompareTag(playerTag))
         {
-            // Custom player collision handling here
-
+            Debug.Log($"FlyToPlayer hit player: {other.name}");
+            
             // Optionally spawn hit effect
             if (hitEffect != null)
             {
@@ -137,15 +180,30 @@ public class FlyToPlayer : MonoBehaviour
             // Destroy if configured to do so
             if (destroyOnPlayerCollision)
             {
-                Destroy(gameObject);
+                // Let DamagingRock handle the damage application
+                // We don't need to do anything special here
+                
+                // Only destroy if we don't have a DamagingRock component
+                // (DamagingRock will handle destruction if it exists)
+                if (damagingRock == null)
+                {
+                    Destroy(gameObject);
+                }
             }
         }
         else
         {
             // Ignore collisions with objects on the ignored layers
-            if (((1 << collision.gameObject.layer) & ignoreLayerMask.value) != 0)
+            if (((1 << other.layer) & ignoreLayerMask.value) != 0)
             {
-                Physics.IgnoreCollision(GetComponent<Collider>(), collision.collider);
+                Collider myCollider = GetComponent<Collider>();
+                Collider otherCollider = other.GetComponent<Collider>();
+                
+                if (myCollider != null && otherCollider != null)
+                {
+                    Physics.IgnoreCollision(myCollider, otherCollider);
+                    Debug.Log($"FlyToPlayer ignoring collision with {other.name} due to layer mask");
+                }
             }
         }
     }

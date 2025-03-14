@@ -553,6 +553,7 @@ MonoBehaviour:
   spawnHeight: 200
   minZ: -200
   maxZ: -130
+  rocksFlyToPlayer: 0
   spawnInterval: 1
   continuousSpawning: 1
 --- !u!4 &134929157
@@ -1028,6 +1029,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damage: 1
+  damageLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  canDamagePlayer: 1
+  destroyOnAnyImpact: 1
+  destroyOnGroundImpact: 1
+  autoDestroyTime: 10
+  destroyEffect: {fileID: 0}
 --- !u!1 &539021887
 GameObject:
   m_ObjectHideFlags: 0
@@ -1265,7 +1274,7 @@ Transform:
   m_LocalScale: {x: 0.009999997, y: 0.009999997, z: 0.009999998}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 988160927}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &599032517
 MonoBehaviour:
@@ -1279,9 +1288,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61163d2c32d338d48b06878add2ee088, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectToSpawn: {fileID: 5330684552257380995, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+  objectToSpawn: {fileID: 507342473}
   spawnPoint: {fileID: 599032516}
-  playerTransform: {fileID: 0}
+  playerTransform: {fileID: 267965808}
   flySpeed: 5
   homingBehavior: 0
   spawnPositionRandomOffset: {x: 1, y: 1, z: 1}
@@ -4957,6 +4966,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7409990223792015429, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_UseGravity
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8682684875501796319, guid: 371891e3011010e4da70fd839ea06418, type: 3}
       propertyPath: m_Enabled
       value: 1
@@ -4984,3 +4997,4 @@ SceneRoots:
   - {fileID: 1256822645}
   - {fileID: 15728835}
   - {fileID: 1859783050}
+  - {fileID: 599032516}

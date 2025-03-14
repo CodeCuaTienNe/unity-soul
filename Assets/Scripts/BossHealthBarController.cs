@@ -103,8 +103,53 @@ public class BossHealthBarController : MonoBehaviour
         if (luongMauHienTai <= 0)
         {
             Debug.Log("Boss defeated!");
-            // You can add boss defeat logic here
+            // Thêm logic để xóa boss khi bị đánh bại
+            StartCoroutine(DestroyBossAfterDelay(2f));
         }
+    }
+    
+    // Thêm coroutine để xóa boss sau một khoảng thời gian
+    private System.Collections.IEnumerator DestroyBossAfterDelay(float delay)
+    {
+        // Đợi một khoảng thời gian để hiển thị hiệu ứng hoặc animation (nếu có)
+        yield return new WaitForSeconds(delay);
+        
+        // Ẩn thanh máu của boss trước khi xóa boss
+        if (healthSlider != null)
+        {
+            // Tìm GameObject cha của thanh máu
+            GameObject healthBarObject = healthSlider.gameObject;
+            while (healthBarObject != null && healthBarObject.GetComponent<Canvas>() == null)
+            {
+                healthBarObject = healthBarObject.transform.parent?.gameObject;
+            }
+            
+            // Nếu tìm thấy Canvas chứa thanh máu, ẩn nó
+            if (healthBarObject != null && healthBarObject.GetComponent<Canvas>() != null)
+            {
+                healthBarObject.SetActive(false);
+                Debug.Log("Boss health bar UI has been hidden");
+            }
+            else
+            {
+                // Nếu không tìm thấy Canvas, ẩn trực tiếp thanh máu
+                Transform parent = healthSlider.transform.parent;
+                if (parent != null)
+                {
+                    parent.gameObject.SetActive(false);
+                    Debug.Log("Boss health bar parent has been hidden");
+                }
+                else
+                {
+                    healthSlider.gameObject.SetActive(false);
+                    Debug.Log("Boss health slider has been hidden");
+                }
+            }
+        }
+        
+        // Xóa đối tượng boss
+        Destroy(gameObject);
+        Debug.Log("Boss has been destroyed!");
     }
     
     // Test function to directly damage boss from Inspector

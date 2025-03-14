@@ -35,8 +35,31 @@ public class SpawnAndFlyTowardPlayer : MonoBehaviour
         // Validate parameters
         if (objectToSpawn == null)
         {
-            Debug.LogError("No spawn object assigned to ObjectSpawnerTargetingPlayer!");
-            return;
+            Debug.LogWarning("No spawn object assigned to ObjectSpawnerTargetingPlayer! Trying to find a rock prefab...");
+            
+            // Tìm kiếm prefab đá trong Resources hoặc sử dụng một prefab mặc định
+            objectToSpawn = Resources.Load<GameObject>("Rock_1");
+            
+            // Nếu vẫn không tìm thấy, tạo một đối tượng đơn giản
+            if (objectToSpawn == null)
+            {
+                // Tạo một đối tượng đơn giản để thay thế
+                GameObject tempObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                tempObject.name = "DefaultRock";
+                tempObject.AddComponent<Rigidbody>();
+                tempObject.AddComponent<DamagingRock>();
+                
+                // Lưu đối tượng này và sử dụng nó làm prefab
+                DontDestroyOnLoad(tempObject);
+                tempObject.SetActive(false);
+                objectToSpawn = tempObject;
+                
+                Debug.Log("Created a default rock object as fallback");
+            }
+            else
+            {
+                Debug.Log("Found rock prefab in Resources");
+            }
         }
 
         if (playerTransform == null)
@@ -64,7 +87,7 @@ public class SpawnAndFlyTowardPlayer : MonoBehaviour
         if (continuousSpawning)
         {
             // Start the continuous spawning coroutine
-            StartCoroutine((IEnumerator)SpawnRoutine());
+            StartCoroutine(SpawnRoutine());
         }
         else
         {
@@ -74,7 +97,7 @@ public class SpawnAndFlyTowardPlayer : MonoBehaviour
     }
 
     // Coroutine for continuous spawning
-    private IEnumerable SpawnRoutine()
+    private IEnumerator SpawnRoutine()
     {
         while (true)
         {
@@ -86,6 +109,12 @@ public class SpawnAndFlyTowardPlayer : MonoBehaviour
     // Spawn a single object at the spawn point's position
     private void SpawnObject()
     {
+        if (objectToSpawn == null)
+        {
+            Debug.LogError("Cannot spawn: objectToSpawn is null!");
+            return;
+        }
+        
         if (playerTransform == null)
         {
             Debug.LogWarning("No player transform to target! Skipping spawn.");
@@ -105,76 +134,74 @@ public class SpawnAndFlyTowardPlayer : MonoBehaviour
         // Calculate initial direction to player
         Vector3 directionToPlayer = (playerTransform.position - spawnPosition).normalized;
 
-        // Instantiate the object at the spawn position
-        GameObject newObject = Instantiate(objectToSpawn, spawnPosition, Quaternion.LookRotation(directionToPlayer));
+        try
+        {
+            // Instantiate the object at the spawn position
+            GameObject newObject = Instantiate(objectToSpawn, spawnPosition, Quaternion.LookRotation(directionToPlayer));
+            
+            // Log để debug
+            Debug.Log($"Spawned rock at position {spawnPosition}");
+            
+            // Đảm bảo đối tượng có Rigidbody và được cấu hình đúng
+            Rigidbody rb = newObject.GetComponent<Rigidbody>();
+            if (rb == null)
+            {
+                rb = newObject.AddComponent<Rigidbody>();
+                Debug.Log("Added Rigidbody to spawned object");
+            }
+            
+            // Cấu hình Rigidbody để bay đến người chơi
+            rb.useGravity = false;
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
+            Debug.Log("Configured Rigidbody: gravity disabled, rotation frozen");
 
-        // Add the flying behavior component to the spawned object
-        FlyTowardsPlayer flyScript = newObject.AddComponent<FlyTowardsPlayer>();
-        flyScript.playerTransform = playerTransform;
-        flyScript.flySpeed = flySpeed;
-        flyScript.homingBehavior = homingBehavior;
+            // Add the flying behavior component to the spawned object
+            FlyTowardsPlayer flyScript = newObject.GetComponent<FlyTowardsPlayer>();
+            if (flyScript == null)
+            {
+                flyScript = newObject.AddComponent<FlyTowardsPlayer>();
+                Debug.Log("Added FlyTowardsPlayer component to spawned object");
+            }
+            
+            // Cấu hình FlyTowardsPlayer
+            flyScript.playerTransform = playerTransform;
+            flyScript.flySpeed = flySpeed;
+            flyScript.homingBehavior = homingBehavior;
+            Debug.Log($"Configured FlyTowardsPlayer: speed={flySpeed}, homing={homingBehavior}");
+            
+            // Đảm bảo đối tượng có DamagingRock để gây sát thương
+            DamagingRock damagingRock = newObject.GetComponent<DamagingRock>();
+            if (damagingRock == null)
+            {
+                damagingRock = newObject.AddComponent<DamagingRock>();
+                damagingRock.damage = 1f;
+                Debug.Log("Added DamagingRock component to spawned object");
+            }
+            
+            // Cấu hình DamagingRock
+            damagingRock.destroyOnAnyImpact = true;
+            damagingRock.canDamagePlayer = true;
+            Debug.Log("Configured DamagingRock: can damage player, will destroy on impact");
+            
+            // Xóa bất kỳ component FlyToPlayer nào để tránh xung đột
+            FlyToPlayer oldFlyComponent = newObject.GetComponent<FlyToPlayer>();
+            if (oldFlyComponent != null)
+            {
+                Destroy(oldFlyComponent);
+                Debug.Log("Removed conflicting FlyToPlayer component");
+            }
+            
+            Debug.Log($"Rock is now flying towards player at {playerTransform.position}");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error spawning object: {e.Message}");
+        }
     }
 
     // Public method to spawn an object (can be called from other scripts or events)
     public void SpawnNow()
     {
         SpawnObject();
-    }
-}
-
-public class FlyTowardsPlayer : MonoBehaviour
-{
-    [HideInInspector]
-    public Transform playerTransform;
-
-    [HideInInspector]
-    public float flySpeed = 5f;
-
-    [HideInInspector]
-    public bool homingBehavior = false;
-
-    private Vector3 flyDirection;
-
-    private void Start()
-    {
-        if (playerTransform == null)
-        {
-            // Try to find the player if not set
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                playerTransform = player.transform;
-            }
-            else
-            {
-                Debug.LogError("No player transform set for FlyTowardsPlayer script!");
-                Destroy(this);
-                return;
-            }
-        }
-
-        // Set initial direction if not using homing behavior
-        if (!homingBehavior)
-        {
-            flyDirection = (playerTransform.position - transform.position).normalized;
-        }
-    }
-
-    private void Update()
-    {
-        if (playerTransform == null)
-        {
-            return;
-        }
-
-        // Update direction if using homing behavior
-        if (homingBehavior)
-        {
-            flyDirection = (playerTransform.position - transform.position).normalized;
-            transform.rotation = Quaternion.LookRotation(flyDirection);
-        }
-
-        // Move towards the target
-        transform.position += flyDirection * flySpeed * Time.deltaTime;
     }
 }
