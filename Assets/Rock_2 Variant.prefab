@@ -1,0 +1,116 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &385789963095238639
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 911786431628451480, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_Name
+      value: Rock_2 Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 4206506694932660244, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 895.97
+      objectReference: {fileID: 0}
+    - target: {fileID: 4206506694932660244, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 118.32
+      objectReference: {fileID: 0}
+    - target: {fileID: 4206506694932660244, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -153.91
+      objectReference: {fileID: 0}
+    - target: {fileID: 4206506694932660244, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4206506694932660244, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4206506694932660244, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4206506694932660244, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4206506694932660244, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4206506694932660244, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4206506694932660244, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8682684875501796319, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 911786431628451480, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8135088487116244417}
+    - targetCorrespondingSourceObject: {fileID: 911786431628451480, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9122367522165771013}
+  m_SourcePrefab: {fileID: 100100000, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+--- !u!1 &719952520173058423 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 911786431628451480, guid: 371891e3011010e4da70fd839ea06418, type: 3}
+  m_PrefabInstance: {fileID: 385789963095238639}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8135088487116244417
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 719952520173058423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af2cecdd23ea2463fa0df3b1bac6721a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damage: 1
+--- !u!114 &9122367522165771013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 719952520173058423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64c0905a71334134babf6ae5f6b595c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 70
+  rotationSpeed: 10
+  accelerationTime: 10
+  accelerationCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  findPlayerOnStart: 1
+  playerTag: Player
+  ignoreLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxLifetime: 30
+  destroyOnPlayerCollision: 1
+  hitEffect: {fileID: 0}
