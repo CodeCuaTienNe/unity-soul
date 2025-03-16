@@ -18,6 +18,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Intro.unity
     guid: 71da1c869146d38459adbb19b965591e
   - enabled: 1
+    path: Assets/Scenes/Guide.unity
+    guid: a2c582d79f17a2041ba299cb864c4d89
+  - enabled: 1
     path: Assets/Scenes/Quy.unity
     guid: 78cb961dd5c5a4d7f8aa3f7995692475
   m_configObjects:
