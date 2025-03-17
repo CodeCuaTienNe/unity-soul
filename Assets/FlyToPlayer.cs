@@ -8,33 +8,30 @@ public class FlyToPlayer : MonoBehaviour
     [Header("Movement Settings")]
     [Tooltip("Speed at which the object flies toward the player")]
     public float moveSpeed = 5f;
-    
+
     [Tooltip("How fast the object rotates to face its movement direction")]
     public float rotationSpeed = 3f;
-    
+
     [Tooltip("Time it takes to reach full speed")]
     public float accelerationTime = 1f;
-    
+
     [Tooltip("Curve that controls how speed increases over time")]
     public AnimationCurve accelerationCurve;
 
     [Header("Target Settings")]
     [Tooltip("Whether to automatically find and target the player on start")]
     public bool findPlayerOnStart = true;
-    
+
     [Tooltip("Tag used to find the player object")]
     public string playerTag = "Player";
-    
-    [Tooltip("Layers to ignore when colliding")]
-    public LayerMask ignoreLayerMask;
 
     [Header("Behavior Settings")]
     [Tooltip("Maximum lifetime in seconds before self-destruction")]
     public float maxLifetime = 15f;
-    
+
     [Tooltip("Whether to destroy this object when it hits the player")]
     public bool destroyOnPlayerCollision = true;
-    
+
     [Tooltip("Effect to spawn when hitting the player")]
     public GameObject hitEffect;
 
@@ -77,16 +74,53 @@ public class FlyToPlayer : MonoBehaviour
         {
             Destroy(gameObject, maxLifetime);
         }
-        
+
         // If we have a DamagingRock component, make sure it's configured correctly
         if (damagingRock != null)
         {
             // We'll handle destruction in this component, so disable auto-destruction in DamagingRock
             damagingRock.destroyOnAnyImpact = false;
-            
+
             // Log that we're working with a DamagingRock
             Debug.Log("FlyToPlayer is working with a DamagingRock component");
         }
+
+        // Set up physics to ignore all collisions except with player
+        SetupCollisionIgnore();
+    }
+
+    private void SetupCollisionIgnore()
+    {
+        // Get this object's collider
+        Collider myCollider = GetComponent<Collider>();
+        if (myCollider == null)
+        {
+            Debug.LogWarning("FlyToPlayer: No Collider found on this object!");
+            return;
+        }
+
+        // Find all colliders in the scene
+        Collider[] allColliders = Object.FindObjectsOfType<Collider>();
+
+        foreach (Collider otherCollider in allColliders)
+        {
+            // Skip our own collider
+            if (otherCollider == myCollider)
+                continue;
+
+            // Skip triggers as they don't cause physical collisions anyway
+            if (otherCollider.isTrigger)
+                continue;
+
+            // Don't ignore collisions with player-tagged objects
+            if (otherCollider.CompareTag(playerTag))
+                continue;
+
+            // Ignore collisions with everything else
+            Physics.IgnoreCollision(myCollider, otherCollider, true);
+        }
+
+        Debug.Log("FlyToPlayer: Set up to ignore all collisions except with player-tagged objects");
     }
 
     public void FindPlayerOnce()
@@ -103,7 +137,7 @@ public class FlyToPlayer : MonoBehaviour
 
             isInitialized = true;
             StartCoroutine(AccelerateTowardsTarget());
-            
+
             Debug.Log($"FlyToPlayer targeting player at position {targetPosition}");
         }
         else
@@ -118,7 +152,7 @@ public class FlyToPlayer : MonoBehaviour
         flyDirection = (targetPosition - transform.position).normalized;
         isInitialized = true;
         StartCoroutine(AccelerateTowardsTarget());
-        
+
         Debug.Log($"FlyToPlayer targeting custom position {targetPosition}");
     }
 
@@ -156,54 +190,40 @@ public class FlyToPlayer : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        HandleCollision(collision.gameObject);
+        // Only respond to collisions with the player
+        if (collision.gameObject.CompareTag(playerTag))
+        {
+            HandlePlayerCollision(collision.gameObject);
+        }
     }
-    
+
     private void OnTriggerEnter(Collider other)
     {
-        HandleCollision(other.gameObject);
-    }
-    
-    private void HandleCollision(GameObject other)
-    {
-        // Check if we hit the player
+        // Only respond to triggers with the player
         if (other.CompareTag(playerTag))
         {
-            Debug.Log($"FlyToPlayer hit player: {other.name}");
-            
-            // Optionally spawn hit effect
-            if (hitEffect != null)
-            {
-                Instantiate(hitEffect, transform.position, Quaternion.identity);
-            }
-
-            // Destroy if configured to do so
-            if (destroyOnPlayerCollision)
-            {
-                // Let DamagingRock handle the damage application
-                // We don't need to do anything special here
-                
-                // Only destroy if we don't have a DamagingRock component
-                // (DamagingRock will handle destruction if it exists)
-                if (damagingRock == null)
-                {
-                    Destroy(gameObject);
-                }
-            }
+            HandlePlayerCollision(other.gameObject);
         }
-        else
+    }
+
+    private void HandlePlayerCollision(GameObject player)
+    {
+        Debug.Log($"FlyToPlayer hit player: {player.name}");
+
+        // Spawn hit effect if one is specified
+        if (hitEffect != null)
         {
-            // Ignore collisions with objects on the ignored layers
-            if (((1 << other.layer) & ignoreLayerMask.value) != 0)
+            Instantiate(hitEffect, transform.position, Quaternion.identity);
+        }
+
+        // Destroy if configured to do so
+        if (destroyOnPlayerCollision)
+        {
+            // Let DamagingRock handle the damage application if it exists
+            // Otherwise destroy this object directly
+            if (damagingRock == null)
             {
-                Collider myCollider = GetComponent<Collider>();
-                Collider otherCollider = other.GetComponent<Collider>();
-                
-                if (myCollider != null && otherCollider != null)
-                {
-                    Physics.IgnoreCollision(myCollider, otherCollider);
-                    Debug.Log($"FlyToPlayer ignoring collision with {other.name} due to layer mask");
-                }
+                Destroy(gameObject);
             }
         }
     }
