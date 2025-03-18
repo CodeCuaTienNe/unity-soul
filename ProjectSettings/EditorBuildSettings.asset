@@ -16,7 +16,7 @@ EditorBuildSettings:
     guid: c0679715b3d0b1b48845abf11687f2a7
   - enabled: 1
     path: Assets/Scenes/Intro.unity
-    guid: 71da1c869146d38459adbb19b965591e
+    guid: 5d31ca79a921ea2469aac1b4cab4a9df
   - enabled: 1
     path: Assets/Scenes/Guide.unity
     guid: a2c582d79f17a2041ba299cb864c4d89
