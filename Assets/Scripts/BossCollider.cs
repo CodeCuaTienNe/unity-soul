@@ -1,5 +1,6 @@
 using UnityEngine;
-using System.Collections; // Add this for coroutines
+using System.Collections;
+using UnityEngine.SceneManagement; // Add this for coroutines
 
 public class BossCollider : MonoBehaviour
 {
@@ -68,5 +69,6 @@ public class BossCollider : MonoBehaviour
         
         // Then destroy the gameObject
         Destroy(gameObject);
+        SceneManager.LoadScene(4);
     }
 }
