@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerHealthController : MonoBehaviour
 {
@@ -6,12 +7,29 @@ public class PlayerHealthController : MonoBehaviour
     public float luongMauHienTai;
     public float luongMauToiDa = 10;
     public float tocDoGiamMau = 0.5f;
+
+    // New field to prevent multiple deaths
+    private bool isDead = false;
+    
+    // Reference to the GameStateManager
+    private GameStateManager gameStateManager;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         luongMauHienTai = luongMauToiDa;
         healthBarScript.capNhatThanhMau(luongMauHienTai, luongMauToiDa);
+        
+        // Try to find the GameStateManager
+        gameStateManager = FindObjectOfType<GameStateManager>();
+        if (gameStateManager == null)
+        {
+            Debug.LogWarning("GameStateManager not found in scene. Adding one now.");
+            
+            // Create a new GameStateManager if none exists
+            GameObject gsmObject = new GameObject("GameStateManager");
+            gameStateManager = gsmObject.AddComponent<GameStateManager>();
+        }
     }
 
     // Xóa hoặc vô hiệu hóa phương thức OnMouseDown để ngăn không cho người chơi tự mất máu khi nhấn chuột trái
@@ -24,6 +42,10 @@ public class PlayerHealthController : MonoBehaviour
     // New method to take damage from rocks
     public void TakeDamage(float damage)
     {
+        // Prevent damage if already dead
+        if (isDead)
+            return;
+            
         // Thêm log để debug
         Debug.Log($"Player taking damage: {damage}. Called from: {new System.Diagnostics.StackTrace().ToString()}");
         
@@ -39,10 +61,28 @@ public class PlayerHealthController : MonoBehaviour
         healthBarScript.capNhatThanhMau(luongMauHienTai, luongMauToiDa);
         
         // Check if player died
-        if (luongMauHienTai <= 0)
+        if (luongMauHienTai <= 0 && !isDead)
         {
             Debug.Log("Player died!");
-            // You can add additional death logic here
+            isDead = true;
+            
+            // Handle death directly if GameStateManager isn't working
+            StartCoroutine(HandlePlayerDeath());
+        }
+    }
+    
+    // New coroutine to handle player death with a failsafe
+    private System.Collections.IEnumerator HandlePlayerDeath()
+    {
+        // Give the GameStateManager a chance to process first
+        yield return new WaitForSeconds(0.5f);
+        
+        // If we're still in the scene, the GameStateManager failed to transition
+        // So we'll do it manually as a failsafe
+        if (gameStateManager == null || gameObject.activeInHierarchy)
+        {
+            Debug.LogWarning("GameStateManager didn't transition scene. Doing it manually.");
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 2); // Current scene + 2 = Lost scene
         }
     }
 

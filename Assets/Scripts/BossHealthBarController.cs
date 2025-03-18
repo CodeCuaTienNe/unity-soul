@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI; // Add this for UI components
+using UnityEngine.SceneManagement;
 
 public class BossHealthBarController : MonoBehaviour
 {
@@ -17,10 +18,19 @@ public class BossHealthBarController : MonoBehaviour
     [SerializeField] private float hitFlashDuration = 0.15f;
     [SerializeField] private Color hitColor = Color.red;
     
+    [Header("Game Controls")]
+    [SerializeField] private bool autoLoadWinScene = true;
+    [SerializeField] private float destroyDelay = 2f;
+    [SerializeField] private int winSceneIndex = 4;
+    
     private Renderer[] renderers;
     private Color[] originalColors;
     private bool isFlashing = false;
     private float targetSliderValue;
+    private bool isDead = false;
+    
+    // Reference to GameStateManager
+    private GameStateManager gameStateManager;
     
     void Start()
     {
@@ -39,18 +49,48 @@ public class BossHealthBarController : MonoBehaviour
         }
         
         // Cache all renderers for hit effect
-        // ...existing code...
         if (showHitFeedback)
         {
             renderers = GetComponentsInChildren<Renderer>();
             originalColors = new Color[renderers.Length];
             for (int i = 0; i < renderers.Length; i++)
             {
-                if (renderers[i].material.HasProperty("_Color"))
+                if (renderers[i] != null && renderers[i].material != null && renderers[i].material.HasProperty("_Color"))
                 {
                     originalColors[i] = renderers[i].material.color;
                 }
             }
+        }
+        
+        // Try to find GameStateManager using multiple methods
+        FindGameStateManager();
+    }
+    
+    private void FindGameStateManager()
+    {
+        // Method 1: Using the Instance property
+        gameStateManager = GameStateManager.Instance;
+        
+        // Method 2: Using FindObjectOfType if Method 1 failed
+        if (gameStateManager == null)
+        {
+            gameStateManager = FindObjectOfType<GameStateManager>();
+        }
+        
+        // Method 3: Using static accessor if implemented
+        if (gameStateManager == null && typeof(GameStateManager).GetMethod("GetInstance") != null)
+        {
+            gameStateManager = GameStateManager.GetInstance();
+        }
+        
+        // Log result
+        if (gameStateManager == null)
+        {
+            Debug.LogWarning("GameStateManager not found. Win condition may not trigger correctly.");
+        }
+        else
+        {
+            Debug.Log("GameStateManager found and connected to BossHealthBarController");
         }
     }
     
@@ -62,6 +102,16 @@ public class BossHealthBarController : MonoBehaviour
             if (healthSlider.value != targetSliderValue)
             {
                 healthSlider.value = Mathf.Lerp(healthSlider.value, targetSliderValue, Time.deltaTime * smoothSpeed);
+            }
+        }
+        
+        // Try to find GameStateManager if not found initially and we're not dead
+        if (gameStateManager == null && !isDead)
+        {
+            // Only search occasionally to avoid performance hit
+            if (Time.frameCount % 60 == 0)
+            {
+                FindGameStateManager();
             }
         }
     }
@@ -93,24 +143,33 @@ public class BossHealthBarController : MonoBehaviour
         }
         
         // Show hit feedback
-        // ...existing code...
         if (showHitFeedback && !isFlashing && renderers != null && renderers.Length > 0)
         {
             StartCoroutine(FlashOnHit());
         }
         
         // Check if boss is defeated
-        if (luongMauHienTai <= 0)
+        if (luongMauHienTai <= 0 && !isDead)
         {
-            Debug.Log("Boss defeated!");
-            // Thêm logic để xóa boss khi bị đánh bại
-            StartCoroutine(DestroyBossAfterDelay(2f));
+            isDead = true;
+            Debug.Log("Boss defeated! Health reached zero.");
+            
+            // Notify GameStateManager if available
+            if (gameStateManager != null)
+            {
+                gameStateManager.NotifyBossDefeated();
+            }
+            
+            // Start death sequence
+            StartCoroutine(DestroyBossAfterDelay(destroyDelay));
         }
     }
     
     // Thêm coroutine để xóa boss sau một khoảng thời gian
     private System.Collections.IEnumerator DestroyBossAfterDelay(float delay)
     {
+        Debug.Log($"Boss will be destroyed after {delay} seconds");
+        
         // Đợi một khoảng thời gian để hiển thị hiệu ứng hoặc animation (nếu có)
         yield return new WaitForSeconds(delay);
         
@@ -147,9 +206,39 @@ public class BossHealthBarController : MonoBehaviour
             }
         }
         
+        // Try to notify GameStateManager one more time
+        if (gameStateManager != null)
+        {
+            gameStateManager.NotifyBossDefeated();
+        }
+        else if (autoLoadWinScene)
+        {
+            // Direct scene load as fallback if GameStateManager isn't available
+            Debug.Log("No GameStateManager found. Loading win scene directly...");
+            SceneManager.LoadScene(winSceneIndex);
+        }
+        
         // Xóa đối tượng boss
+        Debug.Log($"Boss object ({gameObject.name}) is now being destroyed!");
         Destroy(gameObject);
-        Debug.Log("Boss has been destroyed!");
+    }
+    
+    private void OnDestroy()
+    {
+        Debug.Log($"Boss OnDestroy event triggered for {gameObject.name}");
+        
+        // Try to notify GameStateManager one final time
+        if (gameStateManager != null)
+        {
+            Debug.Log("Final boss destruction notification to GameStateManager");
+            gameStateManager.NotifyBossDefeated();
+        }
+        else if (isDead && autoLoadWinScene)
+        {
+            // Direct scene load as final fallback
+            Debug.Log("Attempting direct scene load from OnDestroy");
+            SceneManager.LoadScene(winSceneIndex);
+        }
     }
     
     // Test function to directly damage boss from Inspector
@@ -162,13 +251,12 @@ public class BossHealthBarController : MonoBehaviour
     
     private System.Collections.IEnumerator FlashOnHit()
     {
-        // ...existing code...
         isFlashing = true;
         
         // Change to hit color
         for (int i = 0; i < renderers.Length; i++)
         {
-            if (renderers[i] != null && renderers[i].material.HasProperty("_Color"))
+            if (renderers[i] != null && renderers[i].material != null && renderers[i].material.HasProperty("_Color"))
             {
                 renderers[i].material.color = hitColor;
             }
@@ -180,12 +268,26 @@ public class BossHealthBarController : MonoBehaviour
         // Restore original colors
         for (int i = 0; i < renderers.Length; i++)
         {
-            if (renderers[i] != null && renderers[i].material.HasProperty("_Color"))
+            if (renderers[i] != null && renderers[i].material != null && renderers[i].material.HasProperty("_Color"))
             {
                 renderers[i].material.color = originalColors[i];
             }
         }
         
         isFlashing = false;
+    }
+    
+    // Direct method to force scene transition (for debugging)
+    [ContextMenu("Force Win Scene")]
+    public void ForceWinScene()
+    {
+        if (gameStateManager != null)
+        {
+            gameStateManager.ForceWin();
+        }
+        else
+        {
+            SceneManager.LoadScene(winSceneIndex);
+        }
     }
 }
