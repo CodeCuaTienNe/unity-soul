@@ -89,6 +89,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float comboTimeWindow = 0.4f;
     [SerializeField] private LayerMask enemyLayer = -1;
     [SerializeField] private bool showAttackHitbox = false;
+    
+    // Attack sound settings
+    [SerializeField] private AudioClip[] attackSounds; // Array for multiple attack sound variations
+    [SerializeField] private float attackSoundVolume = 1.0f;
+    private AudioSource playerAudioSource;
+    
     private bool isHitting = false;
     private float attackCooldownTimer = 0f;
     private float attackTimer = 0f;
@@ -119,6 +125,15 @@ public class PlayerController : MonoBehaviour
         InitializeComponents();
         currentMoveSpeed = walkSpeed; // Default to walking speed
         // Find SwordDamage component if it's not assigned
+        // Setup audio source
+    playerAudioSource = GetComponent<AudioSource>();
+    if (playerAudioSource == null)
+    {
+        playerAudioSource = gameObject.AddComponent<AudioSource>();
+        playerAudioSource.spatialBlend = 0.8f; // Mostly 3D sound
+        playerAudioSource.volume = 0.8f;
+    }
+    
     if (swordColliderScript == null && swordColliderObject != null)
     {
         swordColliderScript = swordColliderObject.GetComponent<SwordDamage>();
@@ -343,6 +358,16 @@ public void DisableSwordDamage()
         
         // Apply physics after a tiny delay
         StartCoroutine(ApplyJumpPhysicsAfterDelay());
+    }
+
+    // New method to handle attack input from Input System
+    public void onAttack(InputAction.CallbackContext context)
+    {
+        // Only attack on button press (not release/hold), when not in cooldown and not already attacking
+        if (context.performed && !isHitting && attackCooldownTimer <= 0 && !isDrinking)
+        {
+            StartAttack();
+        }
     }
 
     // Coroutine to apply jump physics with precise timing
@@ -1016,16 +1041,6 @@ public void DisableSwordDamage()
         Debug.Log($"Đã hồi phục {healthRestoreAmount} điểm máu");
     }
 
-    // Add this method to handle attack input from Input System
-    public void onAttack(InputAction.CallbackContext context)
-    {
-        // Only attack on button press (not release/hold), when not in cooldown and not already attacking
-        if (context.performed && !isHitting && attackCooldownTimer <= 0 && !isDrinking)
-        {
-            StartAttack();
-        }
-    }
-
     // Method to start the attack sequence
     private void StartAttack()
     {
@@ -1034,6 +1049,9 @@ public void DisableSwordDamage()
         attackTimer = attackDuration;
         attackCooldownTimer = attackCooldown;
         canAttack = false;
+        
+        // Play attack sound immediately when attack starts
+        PlayAttackSound();
         
         // Handle combo
         if (useAttackCombo)
@@ -1348,6 +1366,37 @@ private string LayerMaskToString(LayerMask layerMask)
         }
     }
     return sb.ToString();
+}
+
+private void PlayAttackSound()
+{
+    // Initialize audio source if needed
+    if (playerAudioSource == null)
+    {
+        playerAudioSource = GetComponent<AudioSource>();
+        if (playerAudioSource == null)
+        {
+            playerAudioSource = gameObject.AddComponent<AudioSource>();
+        }
+    }
+    
+    // Play a random attack sound from the array if available
+    if (attackSounds != null && attackSounds.Length > 0 && playerAudioSource != null)
+    {
+        // Pick a random sound from the array
+        int randomIndex = Random.Range(0, attackSounds.Length);
+        AudioClip soundToPlay = attackSounds[randomIndex];
+        
+        if (soundToPlay != null)
+        {
+            playerAudioSource.PlayOneShot(soundToPlay, attackSoundVolume);
+            
+            if (showDebugLogs)
+            {
+                Debug.Log($"Playing attack sound {randomIndex}");
+            }
+        }
+    }
 }
 }
 

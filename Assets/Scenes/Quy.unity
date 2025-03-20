@@ -251,6 +251,11 @@ MonoBehaviour:
   showHitFeedback: 1
   hitFlashDuration: 0.15
   hitColor: {r: 1, g: 0, b: 0, a: 1}
+  damageSound: {fileID: 8300000, guid: 9a2fd0af73cb14d4cb50748e02648552, type: 3}
+  damageSoundVolume: 1
+  autoLoadWinScene: 1
+  destroyDelay: 2
+  winSceneIndex: 4
 --- !u!114 &15728837
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -264,6 +269,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHP: 500
+  damageSound: {fileID: 0}
+  damageSoundVolume: 1
   bossHealthBar: {fileID: 678232074}
   bossModel: {fileID: 0}
 --- !u!114 &15728838
@@ -1495,6 +1502,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   showAttackHitbox: 0
+  attackSounds:
+  - {fileID: 8300000, guid: ff0d2416a23e3404699dd7726f7e0c73, type: 3}
+  attackSoundVolume: 1
 --- !u!54 &669822277
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1589,6 +1599,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _healBar: {fileID: 1335913676}
+  healthUpdateSound: {fileID: 0}
+  soundVolume: 1
 --- !u!4 &739432052 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6515712193588681746, guid: 0ccb55cad92a8a640a59f9375e95b364, type: 3}
@@ -4570,6 +4582,11 @@ MonoBehaviour:
   showHitFeedback: 1
   hitFlashDuration: 0.15
   hitColor: {r: 1, g: 0, b: 0, a: 1}
+  damageSound: {fileID: 0}
+  damageSoundVolume: 1
+  autoLoadWinScene: 1
+  destroyDelay: 2
+  winSceneIndex: 4
 --- !u!33 &2134196154
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -4618,6 +4635,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHP: 12000
+  damageSound: {fileID: 0}
+  damageSoundVolume: 1
   bossHealthBar: {fileID: 678232074}
   bossModel: {fileID: 0}
 --- !u!114 &2134196157

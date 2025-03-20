@@ -2,10 +2,15 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.SceneManagement; // Add this for coroutines
 
+
 public class BossCollider : MonoBehaviour
 {
     public int maxHP = 100;
     private int currentHP;
+     [Header("Audio")]
+    [SerializeField] private AudioClip damageSound;
+    [SerializeField] private float damageSoundVolume = 1.0f;
+    private AudioSource audioSource;
     
     // Reference to the health bar script
     public BossHealthBar bossHealthBar;
@@ -15,6 +20,12 @@ public class BossCollider : MonoBehaviour
 
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
         currentHP = maxHP;
         
         // Initialize the health bar if assigned
@@ -38,6 +49,7 @@ public class BossCollider : MonoBehaviour
         {
             Debug.Log("Updating health bar after damage: " + currentHP + "/" + maxHP);
             bossHealthBar.capNhatThanhMau(currentHP, maxHP);
+            PlayDamageSound();
         }
         else
         {
@@ -70,5 +82,27 @@ public class BossCollider : MonoBehaviour
         // Then destroy the gameObject
         Destroy(gameObject);
         SceneManager.LoadScene(4);
+    }
+
+    private void PlayDamageSound()
+    {
+        // Initialize audio source if needed
+        if (audioSource == null)
+        {
+            // Try to get existing AudioSource
+            audioSource = GetComponent<AudioSource>();
+            
+            // Create one if it doesn't exist
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+            }
+        }
+        
+        // Play sound if we have a clip
+        if (damageSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(damageSound, damageSoundVolume);
+        }
     }
 }

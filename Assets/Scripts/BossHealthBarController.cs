@@ -18,6 +18,11 @@ public class BossHealthBarController : MonoBehaviour
     [SerializeField] private float hitFlashDuration = 0.15f;
     [SerializeField] private Color hitColor = Color.red;
     
+    [Header("Audio")]
+    [SerializeField] private AudioClip damageSound;
+    [SerializeField] private float damageSoundVolume = 1.0f;
+    private AudioSource audioSource;
+    
     [Header("Game Controls")]
     [SerializeField] private bool autoLoadWinScene = true;
     [SerializeField] private float destroyDelay = 2f;
@@ -60,6 +65,13 @@ public class BossHealthBarController : MonoBehaviour
                     originalColors[i] = renderers[i].material.color;
                 }
             }
+        }
+        
+        // Setup audio source
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
         }
         
         // Try to find GameStateManager using multiple methods
@@ -123,6 +135,9 @@ public class BossHealthBarController : MonoBehaviour
         
         luongMauHienTai -= damage;
         
+        // Play damage sound
+        PlayDamageSound();
+        
         // Ensure health doesn't go below zero
         if (luongMauHienTai < 0)
         {
@@ -162,6 +177,28 @@ public class BossHealthBarController : MonoBehaviour
             
             // Start death sequence
             StartCoroutine(DestroyBossAfterDelay(destroyDelay));
+        }
+    }
+    
+    private void PlayDamageSound()
+    {
+        // Initialize audio source if needed
+        if (audioSource == null)
+        {
+            // Try to get existing AudioSource
+            audioSource = GetComponent<AudioSource>();
+            
+            // Create one if it doesn't exist
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+            }
+        }
+        
+        // Play sound if we have a clip
+        if (damageSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(damageSound, damageSoundVolume);
         }
     }
     
