@@ -1018,6 +1018,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _healBar: {fileID: 1618328018}
+  healthUpdateSound: {fileID: 8300000, guid: 63f9b6bdc88aa4594bb47f66c99fceda, type: 3}
+  soundVolume: 5
 --- !u!1 &507342473 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 911786431628451480, guid: 371891e3011010e4da70fd839ea06418, type: 3}
