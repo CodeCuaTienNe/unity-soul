@@ -60,6 +60,9 @@ public class PlayerHealthController : MonoBehaviour
         // Update the health bar
         healthBarScript.capNhatThanhMau(luongMauHienTai, luongMauToiDa);
         
+        // IMPORTANT: Add this line to trigger animation on the PlayerController
+        GetComponent<PlayerController>()?.TakeDamage(damage);
+        
         // Check if player died
         if (luongMauHienTai <= 0 && !isDead)
         {

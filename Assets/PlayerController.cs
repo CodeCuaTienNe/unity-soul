@@ -102,6 +102,14 @@ public class PlayerController : MonoBehaviour
     private float comboTimer = 0f;
     private bool canAttack = true;
 
+    // Add this to your PlayerController class
+    [Header("Hit Reaction")]
+    [SerializeField] private float hitAnimationDuration = 0.5f;
+    [SerializeField] private float hitImmunityTime = 0.8f;
+    private bool isBeingHit = false;
+    private float hitAnimationTimer = 0f;
+    private float hitImmunityTimer = 0f;
+
     // Component references
     private Vector3 velocity;
     private Animator animator;
@@ -431,6 +439,17 @@ public void DisableSwordDamage()
             InitializeComponents();
             return;
         }
+
+if (isBeingHit)
+{
+    hitAnimationTimer -= Time.deltaTime;
+    
+    // End hit animation when timer expires
+    if (hitAnimationTimer <= 0)
+    {
+        EndHitAnimation();
+    }
+}
         
         // Update jump cooldown timer
         if (jumpCooldownTimer > 0)
@@ -512,6 +531,24 @@ public void DisableSwordDamage()
         if (Input.GetKeyDown(KeyCode.R) && !isDrinking && isGrounded && !isDashing && !isJumping)
         {
             StartDrinking();
+        }
+
+        // Update hit animation state - add this to your Update method 
+        if (isBeingHit)
+        {
+            hitAnimationTimer -= Time.deltaTime;
+            
+            // End hit animation when timer expires
+            if (hitAnimationTimer <= 0)
+            {
+                EndHitAnimation();
+            }
+        }
+
+        // Update immunity timer
+        if (hitImmunityTimer > 0)
+        {
+            hitImmunityTimer -= Time.deltaTime;
         }
     }
 
@@ -597,6 +634,9 @@ public void DisableSwordDamage()
         {
             animator.SetInteger("attackCombo", comboCount);
         }
+
+        // Set hit state
+        animator.SetBool("playerHit", isBeingHit);
     }
     
     private void EndDash()
@@ -1396,6 +1436,57 @@ private void PlayAttackSound()
                 Debug.Log($"Playing attack sound {randomIndex}");
             }
         }
+    }
+}
+
+// Call this method when player takes damage from any source
+public void TakeDamage(float damageAmount)
+{
+    // If player is in immunity frames, ignore hit
+    if (hitImmunityTimer > 0)
+        return;
+    
+    // Set hit state immediately
+    isBeingHit = true;
+    hitAnimationTimer = hitAnimationDuration;
+        
+    // Apply damage to health system here (if you have one)
+    // healthController.TakeDamage(damageAmount);
+    
+    // Trigger hit animation
+    if (animator != null)
+    {
+        // Reset any existing attack triggers
+        animator.ResetTrigger("attack");
+        
+        // Set hit animation parameters
+        animator.SetBool("playerHit", true);
+        animator.SetTrigger("isDamaged");
+    }
+    
+    // Start immunity time
+    hitImmunityTimer = hitImmunityTime;
+    
+    if (showDebugLogs)
+    {
+        Debug.Log($"Player took {damageAmount} damage. Animation triggered: {isBeingHit}");
+    }
+}
+
+private void EndHitAnimation()
+{
+    isBeingHit = false;
+    
+    if (animator != null)
+    {
+        animator.SetBool("playerHit", false);
+        // Reset the trigger to ensure it doesn't accidentally trigger again
+        animator.ResetTrigger("isDamaged");
+    }
+    
+    if (showDebugLogs)
+    {
+        Debug.Log("Player hit animation ended");
     }
 }
 }
