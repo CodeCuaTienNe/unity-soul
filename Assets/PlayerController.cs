@@ -25,7 +25,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float groundCheckDistance = 0.3f;
     [SerializeField] private LayerMask groundLayer = -1; // Default to all layers
     [SerializeField] private float obstacleCheckDistance = 0.5f; // Check for obstacles in front
-    
+
     // Advanced movement settings
     [Header("Advanced Movement")]
     [SerializeField] private bool useSliding = true;
@@ -89,12 +89,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float comboTimeWindow = 0.4f;
     [SerializeField] private LayerMask enemyLayer = -1;
     [SerializeField] private bool showAttackHitbox = false;
-    
+
     // Attack sound settings
     [SerializeField] private AudioClip[] attackSounds; // Array for multiple attack sound variations
     [SerializeField] private float attackSoundVolume = 1.0f;
     private AudioSource playerAudioSource;
-    
+
     private bool isHitting = false;
     private float attackCooldownTimer = 0f;
     private float attackTimer = 0f;
@@ -123,7 +123,7 @@ public class PlayerController : MonoBehaviour
     private bool isObstacleInFront = false;
     private bool isRunning = false;  // New parameter to track running state
     private float currentMoveSpeed;  // New parameter to store current speed
-    
+
     // Keep track of colliding objects for debugging
     private HashSet<Collider> collidingObjects = new HashSet<Collider>();
     private float nextObstacleLogTime = 0f;
@@ -132,25 +132,25 @@ public class PlayerController : MonoBehaviour
     {
         InitializeComponents();
         currentMoveSpeed = walkSpeed; // Default to walking speed
-        // Find SwordDamage component if it's not assigned
-        // Setup audio source
-    playerAudioSource = GetComponent<AudioSource>();
-    if (playerAudioSource == null)
-    {
-        playerAudioSource = gameObject.AddComponent<AudioSource>();
-        playerAudioSource.spatialBlend = 0.8f; // Mostly 3D sound
-        playerAudioSource.volume = 0.8f;
-    }
-    
-    if (swordColliderScript == null && swordColliderObject != null)
-    {
-        swordColliderScript = swordColliderObject.GetComponent<SwordDamage>();
-        if (swordColliderScript == null)
+                                      // Find SwordDamage component if it's not assigned
+                                      // Setup audio source
+        playerAudioSource = GetComponent<AudioSource>();
+        if (playerAudioSource == null)
         {
-            Debug.LogWarning("SwordDamage component not found on swordColliderObject. Adding one now.");
-            swordColliderScript = swordColliderObject.AddComponent<SwordDamage>();
+            playerAudioSource = gameObject.AddComponent<AudioSource>();
+            playerAudioSource.spatialBlend = 0.8f; // Mostly 3D sound
+            playerAudioSource.volume = 0.8f;
         }
-    }
+
+        if (swordColliderScript == null && swordColliderObject != null)
+        {
+            swordColliderScript = swordColliderObject.GetComponent<SwordDamage>();
+            if (swordColliderScript == null)
+            {
+                Debug.LogWarning("SwordDamage component not found on swordColliderObject. Adding one now.");
+                swordColliderScript = swordColliderObject.AddComponent<SwordDamage>();
+            }
+        }
         // Only create trail renderer if useDashTrail is true
         if (useDashTrail)
         {
@@ -179,30 +179,30 @@ public class PlayerController : MonoBehaviour
     }
 
     // Called by animation events at the start of the attack swing
-public void EnableSwordDamage()
-{
-    if (swordColliderScript != null)
+    public void EnableSwordDamage()
     {
-        swordColliderScript.canDealDamage = true;
-        Debug.Log("Sword damage enabled");
+        if (swordColliderScript != null)
+        {
+            swordColliderScript.canDealDamage = true;
+            Debug.Log("Sword damage enabled");
+        }
     }
-}
 
-// Called by animation events at the end of the attack swing
-public void DisableSwordDamage()
-{
-    if (swordColliderScript != null)
+    // Called by animation events at the end of the attack swing
+    public void DisableSwordDamage()
     {
-        swordColliderScript.canDealDamage = false;
-        Debug.Log("Sword damage disabled");
+        if (swordColliderScript != null)
+        {
+            swordColliderScript.canDealDamage = false;
+            Debug.Log("Sword damage disabled");
+        }
     }
-}
 
     private void InitializeComponents()
     {
         // Get animator if available
         animator = GetComponent<Animator>();
-        
+
         // Get or add CharacterController with optimized settings
         characterController = GetComponent<CharacterController>();
         if (characterController == null)
@@ -210,7 +210,7 @@ public void DisableSwordDamage()
             Debug.Log("Adding CharacterController component automatically");
             characterController = gameObject.AddComponent<CharacterController>();
         }
-        
+
         // Configure CharacterController for better obstacle navigation
         characterController.slopeLimit = slopeLimit;
         characterController.stepOffset = stepOffset;
@@ -219,16 +219,16 @@ public void DisableSwordDamage()
         characterController.center = new Vector3(0, 1.0f, 0);
         characterController.height = 2.0f;
         characterController.radius = 0.35f; // Smaller radius to avoid getting stuck
-        
+
         // Find camera controller
         cameraController = Camera.main.GetComponent<CameraController>();
         if (cameraController == null)
         {
             Debug.LogError("PlayerController: Cannot find CameraController on main camera!");
         }
-        
+
         hasInitialized = true;
-        
+
         // Perform thorough environment check for obstacles
         if (identifyBlockingObjects)
         {
@@ -241,14 +241,14 @@ public void DisableSwordDamage()
     public void onMove(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();
-        
+
         // Emergency debug for input
         if (showDebugLogs && moveInput.magnitude > 0.1f)
         {
             Debug.Log($"Input received: {moveInput}");
         }
     }
-    
+
     // New method to handle Run input
     public void onRun(InputAction.CallbackContext context)
     {
@@ -259,13 +259,13 @@ public void DisableSwordDamage()
             currentMoveSpeed = walkSpeed;
             return;
         }
-        
+
         // Set running state based on button press/release
         if (context.started || context.performed)
         {
             isRunning = true;
             currentMoveSpeed = runSpeed;
-            
+
             if (showDebugLogs)
             {
                 Debug.Log("Running started");
@@ -275,14 +275,14 @@ public void DisableSwordDamage()
         {
             isRunning = false;
             currentMoveSpeed = walkSpeed;
-            
+
             if (showDebugLogs)
             {
                 Debug.Log("Running stopped");
             }
         }
     }
-    
+
     // New method to handle Dash input
     public void onDash(InputAction.CallbackContext context)
     {
@@ -291,7 +291,7 @@ public void DisableSwordDamage()
             StartDash();
         }
     }
-    
+
     // Method to start dash
     private void StartDash()
     {
@@ -313,25 +313,25 @@ public void DisableSwordDamage()
         canDash = false;
         dashTimer = dashDuration;
         dashCooldownTimer = dashCooldown;
-        
+
         if (showDebugLogs)
         {
             Debug.Log("Dash started");
         }
-        
+
         // Enable trail effect if available
         if (dashTrail != null && useDashTrail)
         {
             dashTrail.enabled = true;
         }
-        
+
         // Trigger dash animation
         if (animator != null)
         {
             animator.SetTrigger("Dash");
         }
     }
-    
+
     // Replace onJump method with this improved version
     public void onJump(InputAction.CallbackContext context)
     {
@@ -350,20 +350,20 @@ public void DisableSwordDamage()
         isJumpAnimationPlaying = true;
         jumpAnimationTimer = 0f;
         jumpCooldownTimer = jumpCooldown;
-        
+
         // Start the jump animation immediately
         if (animator != null)
         {
             // Reset any animation state that might interfere
             animator.SetBool("isJumping", true);
             animator.speed = 1.0f;
-            
+
             if (showDebugLogs)
             {
                 Debug.Log("Jump animation started");
             }
         }
-        
+
         // Apply physics after a tiny delay
         StartCoroutine(ApplyJumpPhysicsAfterDelay());
     }
@@ -371,10 +371,18 @@ public void DisableSwordDamage()
     // New method to handle attack input from Input System
     public void onAttack(InputAction.CallbackContext context)
     {
-        // Only attack on button press (not release/hold), when not in cooldown and not already attacking
+        // Only attack on button press (not release/hold), when not already attacking
         if (context.performed && !isHitting && attackCooldownTimer <= 0 && !isDrinking)
         {
             StartAttack();
+        }
+        else if (context.performed && isHitting)
+        {
+            // Add this debug message to verify we're correctly detecting the blocked attacks
+            if (showDebugLogs)
+            {
+                Debug.Log("Attack input ignored - already in attack animation");
+            }
         }
     }
 
@@ -383,11 +391,11 @@ public void DisableSwordDamage()
     {
         // Wait for the pre-animation (anticipation phase)
         yield return new WaitForSeconds(preJumpDelay);
-        
+
         // Calculate and apply jump force directly
         float jumpVelocity = Mathf.Sqrt(2 * Mathf.Abs(gravityValue) * jumpHeight);
         playerVelocity.y = jumpVelocity;
-        
+
         if (showDebugLogs)
         {
             Debug.Log($"Jump physics applied with velocity: {jumpVelocity}");
@@ -399,7 +407,7 @@ public void DisableSwordDamage()
     {
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
-        
+
         // If we have input from legacy system, use it
         if (Mathf.Abs(h) > 0.01f || Mathf.Abs(v) > 0.01f)
         {
@@ -409,7 +417,7 @@ public void DisableSwordDamage()
                 Debug.Log($"Using legacy input: {moveInput}");
             }
         }
-        
+
         // Check for run using legacy input system as backup
         bool runPressed = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
         if (runPressed != isRunning)
@@ -417,13 +425,13 @@ public void DisableSwordDamage()
             isRunning = runPressed;
             currentMoveSpeed = isRunning ? runSpeed : walkSpeed;
         }
-        
+
         // Check for jump using legacy input
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded && jumpCooldownTimer <= 0 && !isJumping)
         {
             StartJumpSequence();
         }
-        
+
         // Check for dash using legacy input
         if (Input.GetKeyDown(KeyCode.LeftShift) && canDash && !isDashing && isGrounded)
         {
@@ -440,26 +448,26 @@ public void DisableSwordDamage()
             return;
         }
 
-if (isBeingHit)
-{
-    hitAnimationTimer -= Time.deltaTime;
-    
-    // End hit animation when timer expires
-    if (hitAnimationTimer <= 0)
-    {
-        EndHitAnimation();
-    }
-}
-        
+        if (isBeingHit)
+        {
+            hitAnimationTimer -= Time.deltaTime;
+
+            // End hit animation when timer expires
+            if (hitAnimationTimer <= 0)
+            {
+                EndHitAnimation();
+            }
+        }
+
         // Update jump cooldown timer
         if (jumpCooldownTimer > 0)
         {
             jumpCooldownTimer -= Time.deltaTime;
         }
-        
+
         // Update attack state
         UpdateAttackState();
-        
+
         // Update dash timers
         if (isDashing)
         {
@@ -469,7 +477,7 @@ if (isBeingHit)
                 EndDash();
             }
         }
-        
+
         // Update dash cooldown
         if (!canDash)
         {
@@ -479,54 +487,54 @@ if (isBeingHit)
                 canDash = true;
             }
         }
-        
+
         // Update jump animation timer
         if (isJumpAnimationPlaying)
         {
             jumpAnimationTimer += Time.deltaTime;
-            
+
             // Check if jump animation should end based on timer or landing
-            if ((jumpAnimationTimer >= jumpAnimationDuration && isGrounded) || 
+            if ((jumpAnimationTimer >= jumpAnimationDuration && isGrounded) ||
                 (isGrounded && jumpAnimationTimer > jumpAnimationDuration * 0.6f && playerVelocity.y < 0.1f))
             {
                 StartCoroutine(EndJumpAnimation());
                 isJumpAnimationPlaying = false;
             }
         }
-        
+
         // Try fallback input in case new Input System is not working
         CheckLegacyInput();
-        
+
         // Check if we are grounded
         CheckGrounded();
-        
+
         // Handle jump state completion when landing
         if (isGrounded && isJumping && playerVelocity.y < 0.1f && jumpAnimationTimer > jumpAnimationDuration * 0.6f)
         {
             isJumping = false;
         }
-        
+
         // Check for obstacles
         CheckForObstacles();
-        
+
         // Handle movement
         HandleMovement();
-        
+
         // Apply gravity
         ApplyGravity();
-        
+
         // Apply final movement
         ApplyMovement();
-        
+
         // Update animator if present
         UpdateAnimator();
-        
+
         // Debug key to help unstuck
         if (Input.GetKeyDown(KeyCode.F))
         {
             AttemptUnstuck();
         }
-        
+
         // Kiểm tra phím R - chỉ khi không đang uống, đang đứng trên mặt đất và không đang dash/nhảy
         if (Input.GetKeyDown(KeyCode.R) && !isDrinking && isGrounded && !isDashing && !isJumping)
         {
@@ -537,7 +545,7 @@ if (isBeingHit)
         if (isBeingHit)
         {
             hitAnimationTimer -= Time.deltaTime;
-            
+
             // End hit animation when timer expires
             if (hitAnimationTimer <= 0)
             {
@@ -557,16 +565,16 @@ if (isBeingHit)
     {
         // Wait for landing animation to complete
         yield return new WaitForSeconds(landingDelay);
-        
+
         // Reset jump state
         isJumping = false;
-        
+
         // Reset animation state
         if (animator != null)
         {
             animator.SetBool("isJumping", false);
         }
-        
+
         if (showDebugLogs)
         {
             Debug.Log("Jump animation ended");
@@ -577,35 +585,35 @@ if (isBeingHit)
     private void UpdateAnimator()
     {
         if (animator == null) return;
-        
+
         // --- Movement Animation ---
         float normalizedSpeed = 0;
-        
+
         // Only update movement speed when not jumping or in the landing phase
         if (velocity.magnitude > 0.1f && (!isJumping || (isGrounded && playerVelocity.y < 0.1f)))
         {
             normalizedSpeed = isRunning ? 1.0f : 0.5f;
         }
-        
+
         // Smooth the speed parameter change
         float currentSpeed = animator.GetFloat("speed");
         float speedSmoothRate = isJumping ? 15f : 10f; // Faster transitions during jumps
         animator.SetFloat("speed", Mathf.Lerp(currentSpeed, normalizedSpeed, Time.deltaTime * speedSmoothRate));
-        
+
         // Update jump parameters
         animator.SetBool("isJumping", isJumping);
         animator.SetBool("isGrounded", isGrounded);
-        
+
         // Set the running state
         animator.SetBool("isRunning", isRunning);
-        
+
         // Set dash state and speed up the animation
         if (isDashing)
         {
             animator.SetBool("isDashing", true);
             // Make sure this animation speed calculation uses the correct dashDuration value
-            animator.speed = 2f / dashDuration;  
-            
+            animator.speed = 2f / dashDuration;
+
             // Check if dash animation is finished
             AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
             if (currentState.IsName("Dash") && currentState.normalizedTime >= 1.0f)
@@ -618,17 +626,17 @@ if (isBeingHit)
             animator.SetBool("isDashing", false);
             animator.speed = 1f;  // Reset to normal speed when not dashing
         }
-        
+
         // Add jump progress for animation blending (0 to 1 value through jump animation)
         float jumpProgress = isJumping ? Mathf.Clamp01(jumpAnimationTimer / jumpAnimationDuration) : 0f;
         animator.SetFloat("jumpProgress", jumpProgress);
-        
+
         // Track vertical velocity for blend trees
         animator.SetFloat("verticalVelocity", playerVelocity.y);
-        
+
         // Set attack state
         animator.SetBool("isHitting", isHitting);
-        
+
         // Set attack combo count for animation blending
         if (useAttackCombo)
         {
@@ -638,7 +646,7 @@ if (isBeingHit)
         // Set hit state
         animator.SetBool("playerHit", isBeingHit);
     }
-    
+
     private void EndDash()
     {
         isDashing = false;
@@ -649,59 +657,59 @@ if (isBeingHit)
         animator.SetBool("isDashing", false);
         animator.speed = 1f;
     }
-    
+
     private void DetectNearbyObstacles()
     {
         // Locate all colliders near the player
         Collider[] nearbyColliders = Physics.OverlapSphere(transform.position, 3.0f);
         Debug.Log($"Found {nearbyColliders.Length} colliders near player");
-        
+
         foreach (Collider col in nearbyColliders)
         {
             // Skip the player's own collider
             if (col.gameObject == gameObject) continue;
-            
+
             // Look for potential issues with colliders
             if (col.isTrigger)
             {
                 Debug.Log($"Nearby trigger: {col.gameObject.name} - This shouldn't block movement");
             }
-            else 
+            else
             {
                 // Check if this collider is positioned in a way that could block movement
                 Vector3 dirToCollider = (col.bounds.center - transform.position).normalized;
                 dirToCollider.y = 0; // Only care about horizontal direction
-                
+
                 // Calculate the height difference
                 float heightDiff = col.bounds.center.y - transform.position.y;
-                
+
                 // If the collider is at head level or below feet, it shouldn't block
                 if (heightDiff > 2.0f || heightDiff < -0.5f)
                 {
                     Debug.Log($"Collider {col.gameObject.name} at height {heightDiff} - should not block movement");
                 }
-                else 
+                else
                 {
                     Debug.Log($"Potential obstacle: {col.gameObject.name} at height {heightDiff}, distance: {Vector3.Distance(transform.position, col.bounds.center)}");
                 }
             }
         }
     }
-    
+
     private void CheckGrounded()
     {
         // Use multiple methods for more reliable ground detection
-        
+
         // Method 1: Character controller's built-in check
         isGrounded = characterController.isGrounded;
-        
+
         // Method 2: Raycast check if not grounded by method 1
         if (!isGrounded)
         {
             Vector3 rayStart = transform.position + Vector3.up * 0.1f;
             isGrounded = Physics.Raycast(rayStart, Vector3.down, groundCheckDistance + 0.1f, groundLayer);
         }
-        
+
         // Method 3: SphereCast for more forgiving ground detection
         if (!isGrounded)
         {
@@ -709,18 +717,18 @@ if (isBeingHit)
             isGrounded = Physics.SphereCast(origin, 0.3f, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayer);
         }
     }
-    
+
     private void CheckForObstacles()
     {
         isObstacleInFront = false;
         collidingObjects.Clear();
-        
+
         // Skip if not trying to move
         if (moveInput.magnitude <= 0.1f) return;
-        
+
         // Get the direction we're trying to move in
         Vector3 moveDir = GetMovementDirection();
-        
+
         // Check for obstacles using multiple raycasts in a radial pattern
         float angleStep = 360f / obstacleDetectionRays;
         for (int i = 0; i < obstacleDetectionRays; i++)
@@ -728,49 +736,49 @@ if (isBeingHit)
             float angle = i * angleStep;
             // Only check in the forward half-circle to avoid detecting obstacles behind
             if (angle > 90 && angle < 270) continue;
-            
+
             Vector3 checkDir = Quaternion.Euler(0, angle, 0) * moveDir;
-            
+
             // Use increased radius for more reliable obstacle detection
             RaycastHit hit;
             if (Physics.SphereCast(
-                transform.position + Vector3.up * 0.5f, 
+                transform.position + Vector3.up * 0.5f,
                 obstacleDetectionRadius,
-                checkDir, 
+                checkDir,
                 out hit,
                 obstacleCheckDistance,
                 groundLayer, // Use groundLayer instead of ~0 to avoid unwanted collisions
                 QueryTriggerInteraction.Ignore))
             {
                 // Ignore triggers and other characters
-                if (hit.collider.isTrigger || hit.collider.gameObject.CompareTag("Player")) 
+                if (hit.collider.isTrigger || hit.collider.gameObject.CompareTag("Player"))
                     continue;
-                
+
                 // Add to colliding objects set
-                
+
                 collidingObjects.Add(hit.collider);
-                
+
                 // Check if this is a walkable slope
                 float slopeAngle = Vector3.Angle(hit.normal, Vector3.up);
-                
+
                 // Only mark as obstacle if it exceeds slope limit by a good margin
                 // (Adding a small buffer to avoid edge cases)
                 if (slopeAngle > slopeLimit * 1.2f)
                 {
                     isObstacleInFront = true;
-                    
+
                     // Log obstacle info occasionally to avoid spam
                     if (Time.time > nextObstacleLogTime)
                     {
                         nextObstacleLogTime = Time.time + 1f;
-                        
+
                         if (showDebugLogs)
                         {
                             Debug.Log($"Obstacle detected: {hit.collider.name}, slope: {slopeAngle}°, " +
                                       $"distance: {hit.distance}, layer: {LayerMask.LayerToName(hit.collider.gameObject.layer)}");
                         }
                     }
-                    
+
                     // Calculate slide direction if enabled
                     if (useSliding)
                     {
@@ -780,7 +788,7 @@ if (isBeingHit)
             }
         }
     }
-    
+
     private void ApplyGravity()
     {
         if (isGrounded && playerVelocity.y < 0)
@@ -801,18 +809,18 @@ if (isBeingHit)
         // Use direct camera reference if possible
         Camera mainCamera = Camera.main;
         if (mainCamera == null) return Vector3.zero;
-        
+
         // Get camera directions (flattened)
         Vector3 cameraForward = mainCamera.transform.forward;
         Vector3 cameraRight = mainCamera.transform.right;
-        
+
         // Remove Y component and normalize
         cameraForward.y = 0;
         cameraRight.y = 0;
-        
+
         if (cameraForward.magnitude > 0.01f) cameraForward.Normalize();
         if (cameraRight.magnitude > 0.01f) cameraRight.Normalize();
-        
+
         // Calculate move direction relative to camera
         Vector3 direction = (cameraForward * moveInput.y + cameraRight * moveInput.x);
         return direction.normalized;
@@ -827,13 +835,13 @@ if (isBeingHit)
             velocity = Vector3.zero;
             return;
         }
-        
+
         // Get movement direction from camera
         Vector3 desiredMoveDirection = GetMovementDirection();
-        
+
         // Keep track of velocity for animation - Normalize for direction but keep magnitude for speed blend
         velocity = desiredMoveDirection * moveInput.magnitude;
-        
+
         // Nếu đang uống, giảm tốc độ di chuyển
         if (isDrinking)
         {
@@ -846,19 +854,19 @@ if (isBeingHit)
             // Apply current movement speed (walk or run)
             currentMoveSpeed = isRunning ? runSpeed : walkSpeed;
         }
-        
+
         // Apply current movement speed (walk or run)
         moveDirection = desiredMoveDirection * currentMoveSpeed;
-        
+
         // Rotate towards movement direction
         Quaternion targetRotation = Quaternion.LookRotation(desiredMoveDirection);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
     }
-    
+
     private void ApplyMovement()
     {
         Vector3 moveVector;
-        
+
         if (isDashing)
         {
             // Apply dash movement but maintain gravity influence
@@ -870,81 +878,81 @@ if (isBeingHit)
             // Regular movement - combine horizontal movement with vertical velocity
             moveVector = new Vector3(moveDirection.x, playerVelocity.y, moveDirection.z);
         }
-        
+
         // Try moving
         CollisionFlags flags = characterController.Move(moveVector * Time.deltaTime);
-        
+
         // If we hit something, try alternative directions
         if ((flags & CollisionFlags.Sides) != 0 && moveDirection.magnitude > 0.1f && !isDashing)
         {
             AttemptSideMovement();
         }
     }
-    
+
     private void AttemptSideMovement()
     {
         if (!useSliding) return;
-        
+
         // Calculate the direction we're facing
         Vector3 forward = transform.forward;
-        
+
         // Try multiple alternative angles if stuck
         float[] slideAngles = new float[] { 45f, -45f, 90f, -90f, 135f, -135f };
-        
+
         foreach (float angle in slideAngles)
         {
             // Calculate new direction
             Vector3 slideDir = Quaternion.Euler(0, angle, 0) * forward;
-            
+
             // Check if direction is clear
             bool clear = true;
             if (Physics.Raycast(transform.position + Vector3.up * 0.5f, slideDir, obstacleCheckDistance))
             {
                 clear = false;
             }
-            
+
             if (clear)
             {
                 // Use currentMoveSpeed instead of the removed moveSpeed variable
                 characterController.Move(slideDir * currentMoveSpeed * 0.3f * Time.deltaTime);
-                
+
                 if (showDebugLogs)
                 {
                     Debug.Log($"Sliding in direction: {angle} degrees");
                 }
-                
+
                 break;
             }
         }
     }
-    
+
     // Attempt to get unstuck if stuck
     private void AttemptUnstuck()
     {
         Debug.Log("Attempting to unstuck player...");
-        
+
         // Try to teleport slightly up and forward
         Vector3 unstuckPosition = transform.position + Vector3.up * 0.5f + transform.forward * 1f;
-        
+
         // Check if the new position is clear
         if (!Physics.CheckSphere(unstuckPosition, characterController.radius * 1.5f))
         {
             // Temporarily disable character controller
             characterController.enabled = false;
-            
+
             // Move to new position
             transform.position = unstuckPosition;
-            
+
             // Re-enable character controller
             characterController.enabled = true;
-            
+
             Debug.Log("Unstuck successful!");
         }
         else
         {
             Debug.Log("Could not find clear position to unstuck player");
         }
-        
+
         // Output colliding objects
         if (collidingObjects.Count > 0)
         {
@@ -955,36 +963,36 @@ if (isBeingHit)
             }
         }
     }
-    
+
     // Visualize important information
     private void OnDrawGizmos()
     {
         if (!showGizmos || !Application.isPlaying) return;
-        
+
         // Show ground check
         Gizmos.color = isGrounded ? Color.green : Color.red;
         Vector3 rayStart = transform.position + Vector3.up * 0.1f;
         Gizmos.DrawLine(rayStart, rayStart + Vector3.down * groundCheckDistance);
-        
+
         // Show movement direction
         if (moveDirection.magnitude > 0.1f)
         {
             Gizmos.color = isObstacleInFront ? Color.red : Color.blue;
             Gizmos.DrawRay(transform.position + Vector3.up, moveDirection.normalized);
         }
-        
+
         // Show dash direction if dashing
         if (isDashing)
         {
             Gizmos.color = Color.cyan;
             Gizmos.DrawRay(transform.position + Vector3.up, dashDirection * dashSpeed * 0.5f);
         }
-        
+
         // Show obstacle detection rays
         if (moveInput.magnitude > 0.1f && Application.isPlaying)
         {
             Vector3 moveDir = GetMovementDirection();
-            
+
             // Draw obstacle detection rays
             float angleStep = 360f / obstacleDetectionRays;
             for (int i = 0; i < obstacleDetectionRays; i++)
@@ -992,19 +1000,19 @@ if (isBeingHit)
                 float angle = i * angleStep;
                 // Only draw in forward half-circle
                 if (angle > 90 && angle < 270) continue;
-                
+
                 Vector3 checkDir = Quaternion.Euler(0, angle, 0) * moveDir;
                 Gizmos.color = isObstacleInFront ? Color.red : Color.yellow;
                 Gizmos.DrawRay(transform.position + Vector3.up * 0.5f, checkDir * obstacleCheckDistance);
             }
         }
-        
+
         // Show character bounds
         if (characterController != null)
         {
             Gizmos.color = new Color(1, 1, 0, 0.3f);
             Gizmos.DrawWireSphere(transform.position + characterController.center, characterController.radius);
-            
+
             // Draw character controller height
             Gizmos.color = new Color(0, 1, 1, 0.3f);
             Vector3 bottom = transform.position + characterController.center - Vector3.up * characterController.height * 0.5f;
@@ -1012,7 +1020,7 @@ if (isBeingHit)
             Vector3 top = transform.position + characterController.center + Vector3.up * characterController.height * 0.5f;
             Gizmos.DrawLine(bottom, top);
         }
-        
+
         // Show attack range when enabled
         if (showAttackHitbox && isHitting)
         {
@@ -1021,13 +1029,13 @@ if (isBeingHit)
             Gizmos.DrawSphere(hitboxCenter, attackRange * 0.5f);
         }
     }
-    
+
     // Called when character controller collides
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
         // Add to colliding objects set
         collidingObjects.Add(hit.collider);
-        
+
         if (showDebugLogs && Time.time > nextObstacleLogTime && moveInput.magnitude > 0.1f)
         {
             nextObstacleLogTime = Time.time + 1f;
@@ -1039,16 +1047,16 @@ if (isBeingHit)
     private void StartDrinking()
     {
         isDrinking = true;
-        
+
         // Kích hoạt animation uống
         if (animator != null)
         {
             animator.SetBool("isDrinking", true);
-            
+
             // Tăng tốc độ animation
             animator.speed = 1.5f; // Tăng tốc độ lên 1.5 lần
         }
-        
+
         // Hẹn giờ để kết thúc animation sau 5 giây
         StartCoroutine(EndDrinkingAfterDelay(drinkDuration));
     }
@@ -1058,17 +1066,17 @@ if (isBeingHit)
     {
         // Đợi animation hoàn thành trong thời gian được chỉ định
         yield return new WaitForSeconds(duration);
-        
+
         // Kết thúc uống
         isDrinking = false;
-        
+
         // Tắt animation và đặt lại tốc độ
         if (animator != null)
         {
             animator.SetBool("isDrinking", false);
             animator.speed = 1.0f; // Đặt lại tốc độ bình thường
         }
-        
+
         // Hồi phục máu
         RestoreHealth();
     }
@@ -1087,12 +1095,11 @@ if (isBeingHit)
         // Set attack state
         isHitting = true;
         attackTimer = attackDuration;
-        attackCooldownTimer = attackCooldown;
         canAttack = false;
-        
+
         // Play attack sound immediately when attack starts
         PlayAttackSound();
-        
+
         // Handle combo
         if (useAttackCombo)
         {
@@ -1101,20 +1108,20 @@ if (isBeingHit)
             {
                 comboCount = 0;
             }
-            
+
             // Increment combo counter (or cycle)
             comboCount = (comboCount + 1) % 3;
             if (comboCount == 0) comboCount = 1;
-            
+
             // Reset combo timer
             comboTimer = comboTimeWindow;
-            
+
             if (showDebugLogs)
             {
                 Debug.Log($"Attack combo: {comboCount}");
             }
         }
-        
+
         // Trigger attack animation
         if (animator != null)
         {
@@ -1123,17 +1130,17 @@ if (isBeingHit)
                 // Set the combo count for animation blending
                 animator.SetInteger("attackCombo", comboCount);
             }
-            
+
             // Trigger the attack animation
             animator.SetBool("isHitting", true);
             animator.SetTrigger("attack");
-            
+
             if (showDebugLogs)
             {
                 Debug.Log("Attack animation triggered");
             }
         }
-        
+
         // Perform the actual attack with a slight delay to match animation
         StartCoroutine(PerformAttackDamage(0.2f));
     }
@@ -1143,24 +1150,24 @@ if (isBeingHit)
     {
         // Wait for the attack animation to reach the impact point
         yield return new WaitForSeconds(delay);
-        
+
         // Enable sword damage via the SwordDamage component
         if (swordColliderScript != null)
         {
             swordColliderScript.EnableDamage();
-            
+
             if (showDebugLogs)
             {
                 Debug.Log("Sword damage enabled during attack");
             }
-            
+
             // Keep sword damage active for a short period during swing
             float damageActiveTime = 0.3f; // Time sword can deal damage
             yield return new WaitForSeconds(damageActiveTime);
-            
+
             // Disable sword damage after the active period
             swordColliderScript.DisableDamage();
-            
+
             if (showDebugLogs)
             {
                 Debug.Log("Sword damage disabled after attack");
@@ -1170,14 +1177,14 @@ if (isBeingHit)
         {
             // Fallback to the old method if SwordDamage component isn't set
             Debug.LogWarning("SwordDamage component not assigned! Using fallback attack method.");
-            
+
             // Create attack hitbox in front of player
             Vector3 hitboxCenter = transform.position + transform.forward * (attackRange * 0.5f);
             Collider[] hitEnemies = Physics.OverlapSphere(hitboxCenter, attackRange * 0.5f, enemyLayer);
-            
+
             // Get player's health controller for comparison
             PlayerHealthController playerHealth = GetComponent<PlayerHealthController>();
-            
+
             // Apply damage to enemies
             foreach (Collider enemy in hitEnemies)
             {
@@ -1190,7 +1197,7 @@ if (isBeingHit)
                     }
                     continue;
                 }
-                
+
                 // Skip if this is a child of the player
                 if (enemy.transform.IsChildOf(transform))
                 {
@@ -1200,7 +1207,7 @@ if (isBeingHit)
                     }
                     continue;
                 }
-                
+
                 // Skip if this has the Player tag
                 if (enemy.CompareTag("Player"))
                 {
@@ -1210,7 +1217,7 @@ if (isBeingHit)
                     }
                     continue;
                 }
-                
+
                 // Kiểm tra thêm: Bỏ qua nếu đối tượng là một phần của người chơi
                 Transform parent = enemy.transform.parent;
                 bool isPartOfPlayer = false;
@@ -1223,7 +1230,7 @@ if (isBeingHit)
                     }
                     parent = parent.parent;
                 }
-                
+
                 if (isPartOfPlayer)
                 {
                     if (showDebugLogs)
@@ -1232,13 +1239,13 @@ if (isBeingHit)
                     }
                     continue;
                 }
-                
+
                 // Log the hit
                 if (showDebugLogs)
                 {
                     Debug.Log($"Hit enemy {enemy.name} for {attackDamage} damage");
                 }
-                
+
                 // Try to apply force to the enemy (if it has a rigidbody)
                 Rigidbody enemyRb = enemy.GetComponent<Rigidbody>();
                 if (enemyRb != null)
@@ -1246,7 +1253,7 @@ if (isBeingHit)
                     Vector3 knockbackDirection = (enemy.transform.position - transform.position).normalized;
                     enemyRb.AddForce(knockbackDirection * 5f + Vector3.up * 2f, ForceMode.Impulse);
                 }
-                
+
                 // Send message to enemy - ONLY if it's not the player or a child of the player
                 BossHealthBarController bossHealth = enemy.GetComponent<BossHealthBarController>();
                 if (bossHealth != null)
@@ -1267,8 +1274,171 @@ if (isBeingHit)
         }
     }
 
-    // Add this to your Update method to handle attack timers and state
-    // Place this before the movement handling code in Update()
+    // Add this method right after your EndAttack method
+    [ContextMenu("Debug Sword Attack System")]
+    public void DebugSwordAttackSystem()
+    {
+        Debug.Log("=== SWORD ATTACK DEBUGGING ===");
+
+        // Check sword reference
+        if (swordColliderObject == null)
+        {
+            Debug.LogError("ERROR: Sword Collider Object reference is null! Assign it in the inspector.");
+        }
+        else
+        {
+            Debug.Log($"Sword Collider Object: {swordColliderObject.name}");
+        }
+
+        // Check sword damage script
+        if (swordColliderScript == null)
+        {
+            Debug.LogError("ERROR: Sword Damage Script reference is null! Assign it in the inspector.");
+        }
+        else
+        {
+            Debug.Log($"Sword Damage Script: {swordColliderScript.name}");
+            Debug.Log($"Damage amount: {swordColliderScript.damage}");
+            Debug.Log($"Can deal damage: {swordColliderScript.canDealDamage}");
+
+            // Check layers
+            Debug.Log($"Damage Layers: {LayerMaskToString(swordColliderScript.damageLayers)}");
+        }
+
+        // Check for boss objects
+        BossHealthBarController[] bosses = FindObjectsOfType<BossHealthBarController>();
+        Debug.Log($"Found {bosses.Length} boss objects in scene:");
+        foreach (var boss in bosses)
+        {
+            int bossLayer = boss.gameObject.layer;
+            Debug.Log($"- Boss: {boss.name} on layer {bossLayer} ({LayerMask.LayerToName(bossLayer)})");
+            Debug.Log($"  Health: {boss.luongMauHienTai}/{boss.luongMauToiDa}");
+
+            // Check if boss layer is in damage layers
+            bool canDamageBoss = ((1 << bossLayer) & (swordColliderScript != null ? swordColliderScript.damageLayers.value : 0)) != 0;
+            Debug.Log($"  Can be damaged by sword: {canDamageBoss}");
+        }
+
+        // Check distance to closest boss
+        if (bosses.Length > 0)
+        {
+            float closestDistance = float.MaxValue;
+            BossHealthBarController closestBoss = null;
+
+            foreach (var boss in bosses)
+            {
+                float distance = Vector3.Distance(transform.position, boss.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestBoss = boss;
+                }
+            }
+
+            if (closestBoss != null)
+            {
+                Debug.Log($"Closest boss '{closestBoss.name}' is {closestDistance:F2} units away");
+                Debug.Log($"Attack range: {attackRange} units");
+            }
+        }
+    }
+
+    private string LayerMaskToString(LayerMask layerMask)
+    {
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        for (int i = 0; i < 32; i++)
+        {
+            if ((layerMask.value & (1 << i)) != 0)
+            {
+                if (sb.Length > 0) sb.Append(", ");
+                sb.Append(LayerMask.LayerToName(i));
+            }
+        }
+        return sb.ToString();
+    }
+
+    private void PlayAttackSound()
+    {
+        // Initialize audio source if needed
+        if (playerAudioSource == null)
+        {
+            playerAudioSource = GetComponent<AudioSource>();
+            if (playerAudioSource == null)
+            {
+                playerAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+        }
+
+        // Play a random attack sound from the array if available
+        if (attackSounds != null && attackSounds.Length > 0 && playerAudioSource != null)
+        {
+            // Pick a random sound from the array
+            int randomIndex = Random.Range(0, attackSounds.Length);
+            AudioClip soundToPlay = attackSounds[randomIndex];
+
+            if (soundToPlay != null)
+            {
+                playerAudioSource.PlayOneShot(soundToPlay, attackSoundVolume);
+
+                if (showDebugLogs)
+                {
+                    Debug.Log($"Playing attack sound {randomIndex}");
+                }
+            }
+        }
+    }
+
+    // Call this method when player takes damage from any source
+    public void TakeDamage(float damageAmount)
+    {
+        // If player is in immunity frames, ignore hit
+        if (hitImmunityTimer > 0)
+            return;
+
+        // Set hit state immediately
+        isBeingHit = true;
+        hitAnimationTimer = hitAnimationDuration;
+
+        // Apply damage to health system here (if you have one)
+        // healthController.TakeDamage(damageAmount);
+
+        // Trigger hit animation
+        if (animator != null)
+        {
+            // Reset any existing attack triggers
+            animator.ResetTrigger("attack");
+
+            // Set hit animation parameters
+            animator.SetBool("playerHit", true);
+            animator.SetTrigger("isDamaged");
+        }
+
+        // Start immunity time
+        hitImmunityTimer = hitImmunityTime;
+
+        if (showDebugLogs)
+        {
+            Debug.Log($"Player took {damageAmount} damage. Animation triggered: {isBeingHit}");
+        }
+    }
+
+    private void EndHitAnimation()
+    {
+        isBeingHit = false;
+
+        if (animator != null)
+        {
+            animator.SetBool("playerHit", false);
+            // Reset the trigger to ensure it doesn't accidentally trigger again
+            animator.ResetTrigger("isDamaged");
+        }
+
+        if (showDebugLogs)
+        {
+            Debug.Log("Player hit animation ended");
+        }
+    }
+
     private void UpdateAttackState()
     {
         // Update attack cooldown timer
@@ -1276,218 +1446,118 @@ if (isBeingHit)
         {
             attackCooldownTimer -= Time.deltaTime;
         }
-        
+
+        // Check if attack animation is still playing
+        bool isAttackAnimationPlaying = false;
+        if (animator != null)
+        {
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            // Check if any attack animation is playing (animation name contains "attack" or similar)
+            isAttackAnimationPlaying = stateInfo.IsTag("Attack") || animator.GetBool("isHitting");
+            
+            // Ensure our code state matches the animation state
+            if (isAttackAnimationPlaying && !isHitting)
+            {
+                isHitting = true;
+                if (showDebugLogs) Debug.Log("Syncing code state with animation: Setting isHitting=true");
+            }
+        }
+
         // Update attack timer
         if (isHitting)
         {
             attackTimer -= Time.deltaTime;
-            
-            // End attack when timer expires
-            if (attackTimer <= 0)
+
+            // End attack when timer expires or when animation has finished
+            if (attackTimer <= 0 || (animator != null && IsAttackAnimationFinished()))
             {
                 EndAttack();
             }
+            
+            // Block all attack inputs while in attack animation
+            if (Input.GetMouseButtonDown(0) && showDebugLogs)
+            {
+                Debug.Log("Attack input ignored - already attacking");
+            }
+            
+            return; // Skip the rest of the method
         }
-        
+
         // Update combo timer
         if (comboTimer > 0)
         {
             comboTimer -= Time.deltaTime;
         }
-        
-        // Legacy input check for attacking
-        if (Input.GetMouseButtonDown(0) && !isHitting && attackCooldownTimer <= 0 && !isDrinking && canAttack)
+
+        // Only check for new attacks if not attacking, not in cooldown, etc.
+        if (attackCooldownTimer <= 0 && !isDrinking && canAttack && !isHitting && !isAttackAnimationPlaying)
         {
-            StartAttack();
+            // Legacy input check for attacking
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (showDebugLogs) Debug.Log("Attack input accepted - starting attack");
+                StartAttack();
+            }
         }
-        
-        // Allow attack again after animation ends
-        if (!isHitting && !canAttack)
+        else if (Input.GetMouseButtonDown(0) && showDebugLogs)
+        {
+            string reason = isHitting ? "already hitting" : 
+                           isAttackAnimationPlaying ? "animation playing" :
+                           (attackCooldownTimer > 0) ? "in cooldown" :
+                           isDrinking ? "drinking" : 
+                           !canAttack ? "can't attack" : "unknown";
+                           
+            Debug.Log($"Attack input ignored - {reason}");
+        }
+
+        // Allow attack again after animation ends and we're not hitting
+        if (!isHitting && !isAttackAnimationPlaying && !canAttack)
         {
             canAttack = true;
+            if (showDebugLogs) Debug.Log("Attack enabled again");
         }
+    }
+
+    // Improved method to check if attack animation has completed
+    private bool IsAttackAnimationFinished()
+    {
+        if (animator == null) return true;
+        
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+        
+        // Check if we're in any attack state AND it's completed
+        if ((stateInfo.IsTag("Attack") || animator.GetBool("isHitting")) 
+            && stateInfo.normalizedTime >= 0.95f)
+        {
+            if (showDebugLogs) Debug.Log("Attack animation finished");
+            return true;
+        }
+        
+        return false;
     }
 
     // Method to end the attack state
     private void EndAttack()
     {
+        if (!isHitting) return; // Don't end an attack that's not happening
+        
         isHitting = false;
+        
+        // Start cooldown only after attack animation finishes
+        attackCooldownTimer = attackCooldown;
         
         // Reset animation state
         if (animator != null)
         {
             animator.SetBool("isHitting", false);
+            // Also reset the attack trigger to ensure it doesn't get stuck
+            animator.ResetTrigger("attack");
         }
         
         if (showDebugLogs)
         {
-            Debug.Log("Attack ended");
+            Debug.Log("Attack ended, cooldown started");
         }
     }
 
-    // Add this method right after your EndAttack method
-[ContextMenu("Debug Sword Attack System")]
-public void DebugSwordAttackSystem()
-{
-    Debug.Log("=== SWORD ATTACK DEBUGGING ===");
-    
-    // Check sword reference
-    if (swordColliderObject == null)
-    {
-        Debug.LogError("ERROR: Sword Collider Object reference is null! Assign it in the inspector.");
-    }
-    else
-    {
-        Debug.Log($"Sword Collider Object: {swordColliderObject.name}");
-    }
-    
-    // Check sword damage script
-    if (swordColliderScript == null)
-    {
-        Debug.LogError("ERROR: Sword Damage Script reference is null! Assign it in the inspector.");
-    }
-    else
-    {
-        Debug.Log($"Sword Damage Script: {swordColliderScript.name}");
-        Debug.Log($"Damage amount: {swordColliderScript.damage}");
-        Debug.Log($"Can deal damage: {swordColliderScript.canDealDamage}");
-        
-        // Check layers
-        Debug.Log($"Damage Layers: {LayerMaskToString(swordColliderScript.damageLayers)}");
-    }
-    
-    // Check for boss objects
-    BossHealthBarController[] bosses = FindObjectsOfType<BossHealthBarController>();
-    Debug.Log($"Found {bosses.Length} boss objects in scene:");
-    foreach (var boss in bosses)
-    {
-        int bossLayer = boss.gameObject.layer;
-        Debug.Log($"- Boss: {boss.name} on layer {bossLayer} ({LayerMask.LayerToName(bossLayer)})");
-        Debug.Log($"  Health: {boss.luongMauHienTai}/{boss.luongMauToiDa}");
-        
-        // Check if boss layer is in damage layers
-        bool canDamageBoss = ((1 << bossLayer) & (swordColliderScript != null ? swordColliderScript.damageLayers.value : 0)) != 0;
-        Debug.Log($"  Can be damaged by sword: {canDamageBoss}");
-    }
-    
-    // Check distance to closest boss
-    if (bosses.Length > 0)
-    {
-        float closestDistance = float.MaxValue;
-        BossHealthBarController closestBoss = null;
-        
-        foreach (var boss in bosses)
-        {
-            float distance = Vector3.Distance(transform.position, boss.transform.position);
-            if (distance < closestDistance)
-            {
-                closestDistance = distance;
-                closestBoss = boss;
-            }
-        }
-        
-        if (closestBoss != null)
-        {
-            Debug.Log($"Closest boss '{closestBoss.name}' is {closestDistance:F2} units away");
-            Debug.Log($"Attack range: {attackRange} units");
-        }
-    }
 }
-
-private string LayerMaskToString(LayerMask layerMask)
-{
-    System.Text.StringBuilder sb = new System.Text.StringBuilder();
-    for (int i = 0; i < 32; i++)
-    {
-        if ((layerMask.value & (1 << i)) != 0)
-        {
-            if (sb.Length > 0) sb.Append(", ");
-            sb.Append(LayerMask.LayerToName(i));
-        }
-    }
-    return sb.ToString();
-}
-
-private void PlayAttackSound()
-{
-    // Initialize audio source if needed
-    if (playerAudioSource == null)
-    {
-        playerAudioSource = GetComponent<AudioSource>();
-        if (playerAudioSource == null)
-        {
-            playerAudioSource = gameObject.AddComponent<AudioSource>();
-        }
-    }
-    
-    // Play a random attack sound from the array if available
-    if (attackSounds != null && attackSounds.Length > 0 && playerAudioSource != null)
-    {
-        // Pick a random sound from the array
-        int randomIndex = Random.Range(0, attackSounds.Length);
-        AudioClip soundToPlay = attackSounds[randomIndex];
-        
-        if (soundToPlay != null)
-        {
-            playerAudioSource.PlayOneShot(soundToPlay, attackSoundVolume);
-            
-            if (showDebugLogs)
-            {
-                Debug.Log($"Playing attack sound {randomIndex}");
-            }
-        }
-    }
-}
-
-// Call this method when player takes damage from any source
-public void TakeDamage(float damageAmount)
-{
-    // If player is in immunity frames, ignore hit
-    if (hitImmunityTimer > 0)
-        return;
-    
-    // Set hit state immediately
-    isBeingHit = true;
-    hitAnimationTimer = hitAnimationDuration;
-        
-    // Apply damage to health system here (if you have one)
-    // healthController.TakeDamage(damageAmount);
-    
-    // Trigger hit animation
-    if (animator != null)
-    {
-        // Reset any existing attack triggers
-        animator.ResetTrigger("attack");
-        
-        // Set hit animation parameters
-        animator.SetBool("playerHit", true);
-        animator.SetTrigger("isDamaged");
-    }
-    
-    // Start immunity time
-    hitImmunityTimer = hitImmunityTime;
-    
-    if (showDebugLogs)
-    {
-        Debug.Log($"Player took {damageAmount} damage. Animation triggered: {isBeingHit}");
-    }
-}
-
-private void EndHitAnimation()
-{
-    isBeingHit = false;
-    
-    if (animator != null)
-    {
-        animator.SetBool("playerHit", false);
-        // Reset the trigger to ensure it doesn't accidentally trigger again
-        animator.ResetTrigger("isDamaged");
-    }
-    
-    if (showDebugLogs)
-    {
-        Debug.Log("Player hit animation ended");
-    }
-}
-}
-
