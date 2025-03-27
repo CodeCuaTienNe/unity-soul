@@ -123,7 +123,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   expandDuration: 1
-  maxRadius: 400
+  maxRadius: 350
   knockbackForce: 10
   shockwaveMaterial: {fileID: 0}
   startColor: {r: 1, g: 0.5, b: 0, a: 0.8}
