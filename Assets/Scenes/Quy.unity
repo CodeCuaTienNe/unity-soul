@@ -136,6 +136,7 @@ GameObject:
   - component: {fileID: 15728838}
   - component: {fileID: 15728839}
   - component: {fileID: 15728840}
+  - component: {fileID: 15728841}
   m_Layer: 0
   m_Name: Boss
   m_TagString: Enemy
@@ -162,8 +163,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.100690655, y: 1, z: 1.060112}
-  m_Center: {x: 0.07363316, y: 0, z: 0.030304354}
+  m_Size: {x: 0.100690655, y: 0.8576318, z: 1.060112}
+  m_Center: {x: 0.07363314, y: 0.071185246, z: 0.030304374}
 --- !u!23 &15728833
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -377,6 +378,49 @@ MonoBehaviour:
   startRandomlyOnAwake: 1
   maxExecutions: 20
   prefabSpawner: {fileID: 2134196158}
+--- !u!114 &15728841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 15728831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6093562c44e264149a52f9311876ab24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  jumpHeight: 238.3
+  jumpDuration: 1
+  hangTime: 1
+  fallDuration: 1
+  fallCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.9915161
+      value: 1.1957548
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  attackCooldown: 20
+  shockwavePrefab: {fileID: 1235532344888232866, guid: a4a0a88b83634ca46b19aac2420ae2a9, type: 3}
+  shockwaveDuration: 1
 --- !u!1 &27576266
 GameObject:
   m_ObjectHideFlags: 0
@@ -3189,8 +3233,8 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: ba694eeaf068d4ce499cffa5b9e3c5d3, type: 3}
-  m_Resource: {fileID: 8300000, guid: ba694eeaf068d4ce499cffa5b9e3c5d3, type: 3}
+  m_audioClip: {fileID: 8300000, guid: c495c30aa1f998d4fafe71fcc008021e, type: 3}
+  m_Resource: {fileID: 8300000, guid: c495c30aa1f998d4fafe71fcc008021e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 0.5
   m_Pitch: 1
