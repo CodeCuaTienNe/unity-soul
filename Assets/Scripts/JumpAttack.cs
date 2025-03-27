@@ -10,7 +10,6 @@ public class JumpAttack : MonoBehaviour
     [SerializeField] private float fallDuration = 0.8f;
     [SerializeField] private AnimationCurve fallCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-
     [Header("Cooldown Settings")]
     [SerializeField] private float attackCooldown = 5.0f;
     private float cooldownTimer = 0f;
@@ -19,14 +18,73 @@ public class JumpAttack : MonoBehaviour
     [SerializeField] private GameObject shockwavePrefab;
     [SerializeField] private float shockwaveDuration = 0.5f;
 
+    [Header("Camera Shake Settings")]
+    [SerializeField] private float shakeDuration = 0.7f;
+    [SerializeField] private float shakeMagnitude = 0.3f;
+    [SerializeField] private bool useDistanceBasedShake = true;
+    [SerializeField] private float maxShakeDistance = 30f;
+
+    [Header("Sound Effects")]
+    [SerializeField] private AudioClip impactSound;
+    [SerializeField] private AudioClip rumbleSound;
+    [SerializeField] private float impactVolume = 1.0f;
+    [SerializeField] private float rumbleVolume = 0.7f;
+    [SerializeField] private float rumbleDuration = 2.0f;
+
     private bool isJumping = false;
     private float groundLevel;
+    private CameraController mainCamera;
+    private AudioSource audioSource;
+    private AudioSource rumbleAudioSource;
 
     private void Start()
     {
         // Store the initial Y position as the ground level
         groundLevel = transform.position.y;
+
+        // Find the camera controller reference
+        if (Camera.main != null)
+        {
+            mainCamera = Camera.main.GetComponent<CameraController>();
+            if (mainCamera == null)
+            {
+                Debug.LogWarning("CameraController component not found on main camera!");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Main camera not found in scene!");
+        }
+
+        // Set up audio sources
+        SetupAudioSources();
+
         StartJumpAttack();
+    }
+
+    private void SetupAudioSources()
+    {
+        // Get or add the main audio source for impact sound
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.spatialBlend = 1.0f; // 3D sound
+            audioSource.rolloffMode = AudioRolloffMode.Linear;
+            audioSource.minDistance = 5.0f;
+            audioSource.maxDistance = 50.0f;
+        }
+
+        // Create a separate audio source for the rumble sound
+        GameObject rumbleAudioObj = new GameObject("RumbleAudio");
+        rumbleAudioObj.transform.parent = transform;
+        rumbleAudioObj.transform.localPosition = Vector3.zero;
+        rumbleAudioSource = rumbleAudioObj.AddComponent<AudioSource>();
+        rumbleAudioSource.spatialBlend = 1.0f; // 3D sound
+        rumbleAudioSource.rolloffMode = AudioRolloffMode.Linear;
+        rumbleAudioSource.minDistance = 10.0f;
+        rumbleAudioSource.maxDistance = 100.0f;
+        rumbleAudioSource.loop = true; // Allow looping for the rumble
     }
 
     private void Update()
@@ -36,7 +94,8 @@ public class JumpAttack : MonoBehaviour
         {
             cooldownTimer -= Time.deltaTime;
         }
-        if (transform.position.y != groundLevel) {
+        if (transform.position.y != groundLevel)
+        {
             return;
         }
 
@@ -46,7 +105,7 @@ public class JumpAttack : MonoBehaviour
             // You can trigger the jump based on player distance, 
             // randomly, or other game logic here
 
-            
+
             StartJumpAttack();
             // For AI-driven behavior, you might want to do something like:
             // if (ShouldJumpBasedOnAI())
@@ -121,6 +180,9 @@ public class JumpAttack : MonoBehaviour
         // Create shockwave on impact
         CreateShockwave();
 
+        // Trigger camera shake on impact
+        TriggerCameraShake();
+
         // Reset cooldown
         cooldownTimer = attackCooldown;
         isJumping = false;
@@ -140,6 +202,91 @@ public class JumpAttack : MonoBehaviour
         {
             Debug.LogWarning("Shockwave prefab not assigned to BossJumpSlam script!");
         }
+    }
+
+    private void TriggerCameraShake()
+    {
+        // Calculate distance factor for both shake and sound effects
+        float distanceFactor = 1.0f;
+        if (useDistanceBasedShake && Camera.main != null)
+        {
+            float distanceToCamera = Vector3.Distance(transform.position, Camera.main.transform.position);
+            distanceFactor = Mathf.Clamp01(1 - (distanceToCamera / maxShakeDistance));
+        }
+
+        // Trigger camera shake
+        if (mainCamera != null)
+        {
+            // Scale the magnitude by distance (closer = stronger shake)
+            float adjustedMagnitude = shakeMagnitude * distanceFactor;
+
+            // Only shake if we're close enough to have a visible effect
+            if (distanceFactor > 0.05f)
+            {
+                mainCamera.ShakeCamera(shakeDuration, adjustedMagnitude);
+            }
+        }
+
+        // Play impact sound
+        PlayImpactSound(distanceFactor);
+    }
+
+    private void PlayImpactSound(float distanceFactor)
+    {
+        // Play the initial impact sound
+        if (impactSound != null && audioSource != null)
+        {
+            audioSource.clip = impactSound;
+            audioSource.volume = impactVolume;
+            audioSource.pitch = Random.Range(0.9f, 1.1f); // Slight pitch variation
+            audioSource.Play();
+        }
+
+        // Play the rumble sound
+        if (rumbleSound != null && rumbleAudioSource != null)
+        {
+            StartCoroutine(PlayRumbleSound(distanceFactor));
+        }
+    }
+
+    private IEnumerator PlayRumbleSound(float distanceFactor)
+    {
+        // Set up the rumble sound
+        rumbleAudioSource.clip = rumbleSound;
+        rumbleAudioSource.volume = 0; // Start at zero volume
+        rumbleAudioSource.pitch = Random.Range(0.8f, 1.0f); // Lower pitch for rumble
+        rumbleAudioSource.Play();
+
+        // Fade in the rumble
+        float startTime = Time.time;
+        float fadeInDuration = 0.2f;
+        while (Time.time < startTime + fadeInDuration)
+        {
+            float t = (Time.time - startTime) / fadeInDuration;
+            rumbleAudioSource.volume = Mathf.Lerp(0, rumbleVolume * distanceFactor, t);
+            yield return null;
+        }
+
+        // Hold at max volume
+        rumbleAudioSource.volume = rumbleVolume * distanceFactor;
+
+        // Wait for a while
+        yield return new WaitForSeconds(rumbleDuration - fadeInDuration - 0.5f);
+
+        // Fade out the rumble
+        startTime = Time.time;
+        float fadeOutDuration = 0.5f;
+        float initialVolume = rumbleAudioSource.volume;
+        while (Time.time < startTime + fadeOutDuration)
+        {
+            float t = (Time.time - startTime) / fadeOutDuration;
+            rumbleAudioSource.volume = Mathf.Lerp(initialVolume, 0, t);
+            yield return null;
+        }
+
+        // Ensure it stops completely
+        rumbleAudioSource.Stop();
+        rumbleAudioSource.volume = 0;
     }
 
     // Method that can be called by external scripts to trigger the jump

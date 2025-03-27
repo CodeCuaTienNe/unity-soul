@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
@@ -20,6 +21,15 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float collisionBuffer = 0.25f;
     [SerializeField] private LayerMask collisionLayers = -1;
     [SerializeField] private float collisionRadius = 0.2f;
+
+    [Header("Camera Shake Settings")]
+    [SerializeField] private float shakeDuration = 0.5f;
+    [SerializeField] private float shakeMagnitude = 0.1f;
+    [SerializeField] private float decreaseFactor = 1.0f;
+
+    private Vector3 originalPosition;
+    private float currentShakeDuration = 0f;
+    private bool isShaking = false;
 
     private float currentRotationX;
     private float currentRotationY;
@@ -67,10 +77,17 @@ public class CameraController : MonoBehaviour
 
         // Calculate player movement direction for look-ahead feature
         CalculatePlayerVelocity();
-        
+
         HandleCameraRotation();
         HandleCameraZoom();
         UpdateCameraPosition(false);
+
+        // Don't reset position if we're in the middle of a shake
+        if (isShaking)
+        {
+            // The DoShake coroutine is handling position
+            return;
+        }
     }
 
     private void CalculatePlayerVelocity()
@@ -173,4 +190,47 @@ public class CameraController : MonoBehaviour
     {
         return currentRotationX;
     }
+
+    public void ShakeCamera()
+    {
+        ShakeCamera(shakeDuration, shakeMagnitude);
+    }
+
+    /// <summary>
+    /// Initiates a camera shake effect with custom parameters
+    /// </summary>
+    /// <param name="duration">How long the shake effect lasts in seconds</param>
+    /// <param name="magnitude">How intense the shake is</param>
+    public void ShakeCamera(float duration, float magnitude)
+    {
+        originalPosition = transform.localPosition;
+        currentShakeDuration = duration;
+        StartCoroutine(DoShake(magnitude));
+    }
+
+    private IEnumerator DoShake(float magnitude)
+    {
+        isShaking = true;
+
+        while (currentShakeDuration > 0)
+        {
+            Vector3 shakeOffset = Random.insideUnitSphere * magnitude;
+
+            // Store the position that was calculated in UpdateCameraPosition
+            Vector3 cameraTargetPosition = transform.position;
+
+            // Apply shake offset
+            transform.position = cameraTargetPosition + shakeOffset;
+
+            // Reduce shake duration over time
+            currentShakeDuration -= Time.deltaTime * decreaseFactor;
+
+            yield return null;
+        }
+
+        // Ensure we stop at exactly 0 to avoid tiny lingering effects
+        currentShakeDuration = 0f;
+        isShaking = false;
+    }
+
 }
