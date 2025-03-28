@@ -9,18 +9,12 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float rotationSpeed = 2f;
     [SerializeField] private Vector3 cameraOffset = new Vector3(0f, 1.6f, 0f);
     [SerializeField] private float smoothTime = 0.15f;
-    [SerializeField] private float lookAheadAmount = 0.1f; // Reduced for stability
+    // Look-ahead has been removed
 
-    [Header("Zoom Settings")]
-    [SerializeField] private float defaultCameraDistance = 5f;
-    [SerializeField] private float minCameraDistance = 2f;
-    [SerializeField] private float maxCameraDistance = 8f;
-    [SerializeField] private float zoomSpeed = 4f;
+    [Header("Distance Setting")]
+    [SerializeField] private float cameraDistance = 5f;
 
-    [Header("Collision Settings")]
-    [SerializeField] private float collisionBuffer = 0.25f;
-    [SerializeField] private LayerMask collisionLayers = -1;
-    [SerializeField] private float collisionRadius = 0.2f;
+    // Collision settings removed as collision detection is disabled
 
     [Header("Camera Shake Settings")]
     [SerializeField] private float shakeDuration = 0.5f;
@@ -35,10 +29,12 @@ public class CameraController : MonoBehaviour
     private float currentRotationY;
     private Vector3 currentVelocity = Vector3.zero;
     private Transform playerTransform;
-    private float currentCameraDistance;
     private Vector3 targetPosition;
-    private Vector3 playerVelocity;
-    private Vector3 lastPlayerPosition;
+    // Player velocity variables removed
+
+    // Input variables
+    private float mouseX;
+    private float mouseY;
 
     private void Start()
     {
@@ -64,22 +60,56 @@ public class CameraController : MonoBehaviour
             playerTransform = player.transform;
         }
 
-        currentCameraDistance = defaultCameraDistance;
-        lastPlayerPosition = playerTransform.position;
-        
+
+        // Initialization of player velocity tracking removed
+
         // Initialize camera position
         UpdateCameraPosition(true); // true = instant positioning
+    }
+
+    private void Update()
+    {
+        // Process input in Update for more consistent input handling
+        ProcessInput();
+    }
+
+    private void ProcessInput()
+    {
+        // Get input values - using GetAxis which is generally processed in Update
+        mouseX = Input.GetAxis("Mouse X") * rotationSpeed;
+        mouseY = Input.GetAxis("Mouse Y") * rotationSpeed;
+
+        // Toggle cursor lock with Escape key as a useful addition
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            ToggleCursorLock();
+        }
+    }
+
+    private void ToggleCursorLock()
+    {
+        if (Cursor.lockState == CursorLockMode.Locked)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 
     private void LateUpdate()
     {
         if (playerTransform == null) return;
 
-        // Calculate player movement direction for look-ahead feature
-        CalculatePlayerVelocity();
+        // Look-ahead feature has been removed
 
-        HandleCameraRotation();
-        HandleCameraZoom();
+        // Apply the input that was gathered in Update
+        ApplyCameraRotation();
+
+        // Update the camera position
         UpdateCameraPosition(false);
 
         // Don't reset position if we're in the middle of a shake
@@ -90,57 +120,30 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    private void CalculatePlayerVelocity()
-    {
-        // Calculate frame-to-frame movement with time smoothing
-        Vector3 frameMovement = playerTransform.position - lastPlayerPosition;
-        playerVelocity = Vector3.Lerp(playerVelocity, frameMovement / Time.deltaTime, Time.deltaTime * 5f);
-        lastPlayerPosition = playerTransform.position;
-    }
+    // Player velocity calculation has been removed as it's no longer needed
 
-    private void HandleCameraRotation()
+    private void ApplyCameraRotation()
     {
-        float mouseX = Input.GetAxis("Mouse X") * rotationSpeed;
-        float mouseY = Input.GetAxis("Mouse Y") * rotationSpeed;
-
+        // Apply the cached input values from Update
         currentRotationX += mouseX;
         currentRotationY = Mathf.Clamp(currentRotationY - mouseY, minVerticalAngle, maxVerticalAngle);
     }
 
-    private void HandleCameraZoom()
-    {
-        float scrollInput = Input.GetAxis("Mouse ScrollWheel");
-        if (scrollInput != 0)
-        {
-            currentCameraDistance = Mathf.Clamp(
-                currentCameraDistance - scrollInput * zoomSpeed,
-                minCameraDistance,
-                maxCameraDistance
-            );
-        }
-    }
+
 
     private void UpdateCameraPosition(bool instant)
     {
         // Calculate rotation
         Quaternion rotation = Quaternion.Euler(currentRotationY, currentRotationX, 0);
-        
+
         // Base position calculation including player offset
         Vector3 playerPos = playerTransform.position + Vector3.up * cameraOffset.y;
-        
-        // Calculate target camera position
-        Vector3 desiredPosition = playerPos + rotation * new Vector3(0, 0, -currentCameraDistance);
-        
-        // Check for obstacles between player and camera
-        RaycastHit hit;
-        Vector3 directionToCamera = (desiredPosition - playerPos).normalized;
-        float distanceToTarget = Vector3.Distance(playerPos, desiredPosition);
-        
-        if (Physics.SphereCast(playerPos, collisionRadius, directionToCamera, out hit, distanceToTarget, collisionLayers))
-        {
-            float adjustedDistance = hit.distance - collisionBuffer;
-            desiredPosition = playerPos + directionToCamera * adjustedDistance;
-        }
+
+        // Calculate target camera position without look-ahead
+        Vector3 desiredPosition = playerPos + rotation * new Vector3(0, 0, -cameraDistance);
+
+        // Collision detection has been completely disabled
+        // No obstacles will affect camera position
 
         // Apply position with proper smoothing
         if (instant)
@@ -191,6 +194,14 @@ public class CameraController : MonoBehaviour
         return currentRotationX;
     }
 
+    public void ResetCamera()
+    {
+        // Reset rotation and position to defaults
+        currentRotationX = 0f;
+        currentRotationY = 0f;
+        UpdateCameraPosition(true);
+    }
+
     public void ShakeCamera()
     {
         ShakeCamera(shakeDuration, shakeMagnitude);
@@ -232,5 +243,4 @@ public class CameraController : MonoBehaviour
         currentShakeDuration = 0f;
         isShaking = false;
     }
-
 }

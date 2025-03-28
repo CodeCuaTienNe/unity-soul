@@ -3227,16 +3227,7 @@ MonoBehaviour:
   rotationSpeed: 2
   cameraOffset: {x: 0, y: 2, z: -4}
   smoothTime: 0.05
-  lookAheadAmount: 0.5
-  defaultCameraDistance: 5
-  minCameraDistance: 2
-  maxCameraDistance: 8
-  zoomSpeed: 2
-  collisionBuffer: 0.25
-  collisionLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  collisionRadius: 0.2
+  cameraDistance: 5
   shakeDuration: 0.5
   shakeMagnitude: 0.1
   decreaseFactor: 1
@@ -5971,7 +5962,7 @@ GameObject:
   - component: {fileID: 2112778126}
   m_Layer: 0
   m_Name: Sword
-  m_TagString: Sword
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6373,6 +6364,14 @@ PrefabInstance:
     - target: {fileID: 3774357719433052662, guid: 16a4468e2a9baaa439ae390bca1177fb, type: 3}
       propertyPath: m_Name
       value: Sword
+      objectReference: {fileID: 0}
+    - target: {fileID: 3774357719433052662, guid: 16a4468e2a9baaa439ae390bca1177fb, type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
+    - target: {fileID: 3860338064455088228, guid: 16a4468e2a9baaa439ae390bca1177fb, type: 3}
+      propertyPath: m_TagString
+      value: Untagged
       objectReference: {fileID: 0}
     - target: {fileID: 4551704316183829324, guid: 16a4468e2a9baaa439ae390bca1177fb, type: 3}
       propertyPath: m_LocalPosition.x
